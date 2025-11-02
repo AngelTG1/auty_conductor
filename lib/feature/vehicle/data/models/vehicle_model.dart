@@ -8,16 +8,25 @@ class VehicleModel extends VehicleEntity {
     required super.brand,
     required super.colorName,
     required super.colorHex,
+    required super.imageUrl,
   });
 
   factory VehicleModel.fromJson(Map<String, dynamic> json) {
+    // Puede que "color" venga como objeto o como propiedades planas
+    final color = json['color'];
+
     return VehicleModel(
-      uuid: json['uuid'],
-      driverUuid: json['driverUuid'],
-      type: json['type'],
-      brand: json['brand'],
-      colorName: json['color']['name'],
-      colorHex: json['color']['hex'],
+      uuid: (json['uuid'] ?? '').toString(),
+      driverUuid: (json['driverUuid'] ?? '').toString(),
+      type: (json['type'] ?? '').toString(),
+      brand: (json['brand'] ?? '').toString(),
+      colorName: color is Map
+          ? (color['name'] ?? '').toString()
+          : (json['colorName'] ?? '').toString(),
+      colorHex: color is Map
+          ? (color['hex'] ?? '').toString()
+          : (json['colorHex'] ?? '').toString(),
+      imageUrl: (json['imageUrl'] ?? '').toString(),
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/vehicle_catalog_model.dart';
 import '../models/vehicle_model.dart';
+import '../../domain/entities/vehicle_entity.dart';
 
 class VehicleRemoteDataSource {
   final String baseUrl = 'http://192.168.0.19:3000/API/v1/vehicles';
@@ -41,7 +42,7 @@ class VehicleRemoteDataSource {
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
-    final driverUuid = prefs.getString('driverUuid'); // ✅ CORRECTO
+    final driverUuid = prefs.getString('driverUuid');
 
     final response = await http.post(
       Uri.parse(baseUrl),
@@ -50,7 +51,7 @@ class VehicleRemoteDataSource {
         'Authorization': 'Bearer $token',
       },
       body: jsonEncode({
-        'driverUuid': driverUuid, // 👈 CORRECTO
+        'driverUuid': driverUuid,
         'typeId': typeId,
         'brandId': brandId,
         'colorId': colorId,
@@ -61,6 +62,41 @@ class VehicleRemoteDataSource {
       return VehicleModel.fromJson(jsonDecode(response.body));
     } else {
       throw Exception(jsonDecode(response.body)['message'] ?? 'Error al registrar vehículo');
+    }
+  }
+
+  // 🔹 Obtener el vehículo más reciente del conductor
+  Future<VehicleEntity?> getMyVehicle(String driverUuid) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/my/$driverUuid'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    print("📡 GET /my/$driverUuid → ${response.statusCode}");
+    print("📦 Respuesta: ${response.body}");
+
+    if (response.statusCode == 200 && response.body.isNotEmpty) {
+      final decoded = jsonDecode(response.body);
+
+      if (decoded is List && decoded.isNotEmpty) {
+        // 🔹 Retornar el último (más reciente)
+        return VehicleModel.fromJson(decoded.last);
+      }
+
+      if (decoded is Map<String, dynamic>) {
+        return VehicleModel.fromJson(decoded);
+      }
+
+      return null;
+    } else {
+      print("⚠️ Error al obtener vehículo: ${response.statusCode}");
+      return null;
     }
   }
 }

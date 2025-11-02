@@ -2,25 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:auty_conductor/feature/vehicle/data/datasources/vehicle_remote_datasource.dart';
 import 'package:auty_conductor/feature/vehicle/data/repositories/vehicle_repository_impl.dart';
 import 'package:auty_conductor/feature/vehicle/domain/entities/vehicle_catalog_entity.dart';
+import 'package:auty_conductor/feature/vehicle/domain/entities/vehicle_entity.dart';
 import 'package:auty_conductor/feature/vehicle/domain/usecases/register_vehicle_usecase.dart';
 
 class VehicleProvider extends ChangeNotifier {
-  // 🔹 Repositorio que conecta con el datasource remoto
   final _repo = VehicleRepositoryImpl(VehicleRemoteDataSource());
 
-  // 🔹 Listas de catálogos (tipo, marca, color)
   List<VehicleTypeEntity> types = [];
   List<VehicleBrandEntity> brands = [];
   List<VehicleColorEntity> colors = [];
 
-  // 🔹 Variables seleccionadas por el usuario
   int? selectedTypeId;
   int? selectedBrandId;
   int? selectedColorId;
+  VehicleEntity? currentVehicle; // 🔹 carro actual
 
   bool loading = false;
 
-  // 🔹 Carga inicial de catálogos
   Future<void> loadCatalogs() async {
     loading = true;
     notifyListeners();
@@ -33,7 +31,6 @@ class VehicleProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // 🔹 Métodos para selección individual
   void selectType(int id) {
     selectedTypeId = id;
     notifyListeners();
@@ -49,17 +46,43 @@ class VehicleProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // 🔹 Registrar vehículo (usa el caso de uso)
   Future<void> registerVehicle(String driverUuid) async {
-    if (selectedTypeId == null || selectedBrandId == null || selectedColorId == null) {
+    if (selectedTypeId == null ||
+        selectedBrandId == null ||
+        selectedColorId == null) {
       throw Exception("Debes seleccionar tipo, marca y color");
     }
 
     final usecase = RegisterVehicleUseCase(_repo);
-    await usecase.call(driverUuid, selectedTypeId!, selectedBrandId!, selectedColorId!);
+    await usecase.call(
+      driverUuid,
+      selectedTypeId!,
+      selectedBrandId!,
+      selectedColorId!,
+    );
   }
 
-  // 🔹 Nuevo método: limpiar todas las selecciones
+  // 🔹 Nuevo método: obtener el carro actual del conductor
+  Future<void> loadCurrentVehicle(String driverUuid) async {
+    loading = true;
+    notifyListeners();
+
+    currentVehicle = await _repo.getMyVehicle(driverUuid);
+
+    loading = false;
+    notifyListeners();
+  }
+
+  Future<VehicleEntity?> loadMyVehicle(String driverUuid) async {
+    try {
+      final vehicle = await _repo.remote.getMyVehicle(driverUuid);
+      return vehicle;
+    } catch (e) {
+      print("⚠️ Error al cargar vehículo del conductor: $e");
+      return null;
+    }
+  }
+
   void resetSelections() {
     selectedTypeId = null;
     selectedBrandId = null;

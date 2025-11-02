@@ -19,16 +19,20 @@ class VehicleRepositoryImpl implements VehicleRepository {
 
   @override
   Future<VehicleEntity> registerVehicle(
-    String driverUuid, // 👈 mantenlo para compatibilidad
+    String driverUuid,
     int typeId,
     int brandId,
     int colorId,
   ) {
-    // Ya no pasamos driverUuid, el data source lo obtiene solo
     return remote.registerVehicle(
       typeId: typeId,
       brandId: brandId,
       colorId: colorId,
     );
+  }
+
+  // 🔹 Nuevo método
+  Future<VehicleEntity?> getMyVehicle(String driverUuid) async {
+    return remote.getMyVehicle(driverUuid);
   }
 }

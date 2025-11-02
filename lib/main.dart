@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:provider/provider.dart';
 import 'core/router/app_router.dart';
 import 'feature/auth/presentation/providers/auth_provider.dart';
 import 'feature/vehicle/presentation/providers/vehicle_provider.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Fuerza la inicialización del secure storage antes de runApp
+  const FlutterSecureStorage secureStorage = FlutterSecureStorage();
+  await secureStorage.read(key: 'token');
+
   runApp(const MainApp());
 }
 
@@ -25,16 +32,6 @@ class MainApp extends StatelessWidget {
           useMaterial3: true,
           scaffoldBackgroundColor: Colors.grey[100],
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-          appBarTheme: const AppBarTheme(
-            backgroundColor: Colors.white,
-            elevation: 1,
-            iconTheme: IconThemeData(color: Colors.black),
-            titleTextStyle: TextStyle(
-              color: Colors.black,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
         ),
       ),
     );

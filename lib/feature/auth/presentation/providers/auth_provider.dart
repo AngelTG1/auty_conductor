@@ -4,6 +4,7 @@ import 'package:auty_conductor/feature/auth/domain/entities/auth_entity.dart';
 import 'package:auty_conductor/feature/auth/domain/usecases/login_usecase.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../core/services/secure_storage_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   final LoginUseCase _loginUseCase = LoginUseCase(
@@ -21,13 +22,14 @@ class AuthProvider extends ChangeNotifier {
       final authUser = await _loginUseCase.call(email, password);
       user = authUser;
 
-      final prefs = await SharedPreferences.getInstance();
-      // 🔹 Guardar todos los datos del usuario
-      await prefs.setString('token', authUser.token);
-      await prefs.setString('userUuid', authUser.uuid);
-      await prefs.setString('driverUuid', authUser.driverUuid);
-      await prefs.setString('userName', authUser.name);  // 👈 agregado
-      await prefs.setString('userEmail', authUser.email); // 👈 agregado
+      // ✅ Guarda datos sensibles de forma cifrada
+      await SecureStorageService.write('token', authUser.token);
+      await SecureStorageService.write('userUuid', authUser.uuid);
+      await SecureStorageService.write('driverUuid', authUser.driverUuid);
+      await SecureStorageService.write('userName', authUser.name);
+      await SecureStorageService.write('userEmail', authUser.email);
+
+      debugPrint('✅ Sesión guardada cifrada correctamente');
 
       isLoading = false;
       notifyListeners();
