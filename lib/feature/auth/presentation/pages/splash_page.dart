@@ -31,7 +31,10 @@ class _SplashPageState extends State<SplashPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
 
-      if (token != null && token.isNotEmpty && driverUuid != null && driverUuid.isNotEmpty) {
+      if (token != null &&
+          token.isNotEmpty &&
+          driverUuid != null &&
+          driverUuid.isNotEmpty) {
         context.go(AppRoutes.home);
       } else {
         context.go(AppRoutes.login);

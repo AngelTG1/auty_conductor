@@ -1,5 +1,5 @@
 class AppRoutes {
-  static const splash = '/'; // 👈 Ruta inicial
+  static const splash = '/'; 
   static const login = '/login';
   static const vehicleType = '/vehicle/type';
   static const vehicleBrand = '/vehicle/brand';

@@ -10,7 +10,7 @@ import 'package:auty_conductor/feature/auth/presentation/pages/splash_page.dart'
 import 'app_routes.dart';
 
 final GoRouter appRouter = GoRouter(
-  initialLocation: AppRoutes.splash, // 👈 Ahora arranca en Splash
+  initialLocation: AppRoutes.splash,
   routes: [
     GoRoute(path: AppRoutes.splash, builder: (_, __) => const SplashPage()),
     GoRoute(path: AppRoutes.login, builder: (_, __) => const LoginPage()),
@@ -35,7 +35,7 @@ final GoRouter appRouter = GoRouter(
 );
 
 class AppRoutes {
-  static const splash = '/'; // 👈 Ruta inicial
+  static const splash = '/'; 
   static const login = '/login';
   static const vehicleType = '/vehicle/type';
   static const vehicleBrand = '/vehicle/brand';

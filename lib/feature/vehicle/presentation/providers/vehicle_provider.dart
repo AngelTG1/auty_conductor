@@ -8,17 +8,20 @@ import 'package:auty_conductor/feature/vehicle/domain/usecases/register_vehicle_
 class VehicleProvider extends ChangeNotifier {
   final _repo = VehicleRepositoryImpl(VehicleRemoteDataSource());
 
+  // 🔹 Catálogos
   List<VehicleTypeEntity> types = [];
   List<VehicleBrandEntity> brands = [];
   List<VehicleColorEntity> colors = [];
 
+  // 🔹 Selecciones
   int? selectedTypeId;
   int? selectedBrandId;
   int? selectedColorId;
-  VehicleEntity? currentVehicle; // 🔹 carro actual
+  VehicleEntity? currentVehicle;
 
   bool loading = false;
 
+  // 🔹 Cargar catálogos
   Future<void> loadCatalogs() async {
     loading = true;
     notifyListeners();
@@ -31,22 +34,26 @@ class VehicleProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void selectType(int id) {
+  // 🔹 Seleccionar o deseleccionar tipo
+  void selectType(int? id) {
     selectedTypeId = id;
     notifyListeners();
   }
 
-  void selectBrand(int id) {
+  // 🔹 Seleccionar o deseleccionar marca
+  void selectBrand(int? id) {
     selectedBrandId = id;
     notifyListeners();
   }
 
-  void selectColor(int id) {
+  // 🔹 Seleccionar o deseleccionar color
+  void selectColor(int? id) {
     selectedColorId = id;
     notifyListeners();
   }
 
-  Future<void> registerVehicle(String driverUuid) async {
+  // 🔹 Registrar vehículo
+  Future<void> registerVehicle() async {
     if (selectedTypeId == null ||
         selectedBrandId == null ||
         selectedColorId == null) {
@@ -54,15 +61,12 @@ class VehicleProvider extends ChangeNotifier {
     }
 
     final usecase = RegisterVehicleUseCase(_repo);
-    await usecase.call(
-      driverUuid,
-      selectedTypeId!,
-      selectedBrandId!,
-      selectedColorId!,
-    );
+    await usecase.call(selectedTypeId!, selectedBrandId!, selectedColorId!);
+
+    print('🚗 Vehículo registrado correctamente');
   }
 
-  // 🔹 Nuevo método: obtener el carro actual del conductor
+  // 🔹 Obtener vehículo actual del conductor
   Future<void> loadCurrentVehicle(String driverUuid) async {
     loading = true;
     notifyListeners();
@@ -83,6 +87,7 @@ class VehicleProvider extends ChangeNotifier {
     }
   }
 
+  // 🔹 Resetear selecciones
   void resetSelections() {
     selectedTypeId = null;
     selectedBrandId = null;
