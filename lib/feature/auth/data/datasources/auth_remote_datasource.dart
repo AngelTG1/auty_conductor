@@ -4,7 +4,7 @@ import '../models/auth_model.dart';
 
 class AuthRemoteDataSource {
   final String baseUrl =
-      'http://192.168.0.19:3000/API/v1/auth'; // 🔹 Ajusta si usas emulador o IP real
+      'https://backauty-production.up.railway.app/API/v1/auth'; 
 
   Future<AuthModel> login(String email, String password) async {
     final url = Uri.parse('$baseUrl/login');

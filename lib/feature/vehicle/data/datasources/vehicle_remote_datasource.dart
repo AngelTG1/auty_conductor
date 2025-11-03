@@ -1,13 +1,14 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../core/services/secure_storage_service.dart';
 import '../models/vehicle_catalog_model.dart';
 import '../models/vehicle_model.dart';
 import '../../domain/entities/vehicle_entity.dart';
 
 class VehicleRemoteDataSource {
-  final String baseUrl = 'http://192.168.0.19:3000/API/v1/vehicles';
+  final String baseUrl = 'https://backauty-production.up.railway.app/API/v1/vehicles';
 
+  // 🔹 Tipos
   Future<List<VehicleTypeModel>> getTypes() async {
     final response = await http.get(Uri.parse('$baseUrl/vehicle-types'));
     if (response.statusCode == 200) {
@@ -17,6 +18,7 @@ class VehicleRemoteDataSource {
     throw Exception('Error al obtener tipos de vehículo');
   }
 
+  // 🔹 Marcas
   Future<List<VehicleBrandModel>> getBrands() async {
     final response = await http.get(Uri.parse('$baseUrl/vehicle-brands'));
     if (response.statusCode == 200) {
@@ -26,6 +28,7 @@ class VehicleRemoteDataSource {
     throw Exception('Error al obtener marcas');
   }
 
+  // 🔹 Colores
   Future<List<VehicleColorModel>> getColors() async {
     final response = await http.get(Uri.parse('$baseUrl/vehicle-colors'));
     if (response.statusCode == 200) {
@@ -35,15 +38,36 @@ class VehicleRemoteDataSource {
     throw Exception('Error al obtener colores');
   }
 
+  // 🔹 Registrar vehículo (versión 100% segura)
   Future<VehicleModel> registerVehicle({
     required int typeId,
     required int brandId,
     required int colorId,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
-    final driverUuid = prefs.getString('driverUuid');
+    final token = await SecureStorageService.read('token');
+    final driverUuid = await SecureStorageService.read('driverUuid');
+    final userUuid = await SecureStorageService.read('userUuid'); // respaldo
 
+    // 🔍 Depuración
+    print('🔐 Token leído: $token');
+    print('🚗 DriverUuid leído: $driverUuid');
+    print('👤 UserUuid leído: $userUuid');
+
+    // 🔹 Validaciones
+    if (token == null || token.isEmpty) {
+      throw Exception(
+        "⚠️ No se encontró token guardado. Debes iniciar sesión nuevamente.",
+      );
+    }
+
+    // Si no hay driverUuid, usamos userUuid como respaldo (por si tu backend lo acepta)
+    final uuidToUse = driverUuid?.isNotEmpty == true ? driverUuid : userUuid;
+
+    if (uuidToUse == null || uuidToUse.isEmpty) {
+      throw Exception("⚠️ No se encontró driverUuid ni userUuid guardado.");
+    }
+
+    // 🔹 Petición POST
     final response = await http.post(
       Uri.parse(baseUrl),
       headers: {
@@ -51,24 +75,32 @@ class VehicleRemoteDataSource {
         'Authorization': 'Bearer $token',
       },
       body: jsonEncode({
-        'driverUuid': driverUuid,
+        'driverUuid': uuidToUse,
         'typeId': typeId,
         'brandId': brandId,
         'colorId': colorId,
       }),
     );
 
+    print('📡 POST ${response.request?.url} → ${response.statusCode}');
+    print(
+      '📦 BODY ENVIADO: ${jsonEncode({'driverUuid': uuidToUse, 'typeId': typeId, 'brandId': brandId, 'colorId': colorId})}',
+    );
+    print('📩 RESPUESTA: ${response.body}');
+
     if (response.statusCode == 201) {
       return VehicleModel.fromJson(jsonDecode(response.body));
     } else {
-      throw Exception(jsonDecode(response.body)['message'] ?? 'Error al registrar vehículo');
+      throw Exception(
+        jsonDecode(response.body)['message'] ?? 'Error al registrar vehículo',
+      );
     }
   }
 
-  // 🔹 Obtener el vehículo más reciente del conductor
+  // 🔹 Obtener vehículo actual
   Future<VehicleEntity?> getMyVehicle(String driverUuid) async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
+    final token = await SecureStorageService.read('token');
+    if (token == null) throw Exception("Token no encontrado");
 
     final response = await http.get(
       Uri.parse('$baseUrl/my/$driverUuid'),
@@ -78,25 +110,15 @@ class VehicleRemoteDataSource {
       },
     );
 
-    print("📡 GET /my/$driverUuid → ${response.statusCode}");
-    print("📦 Respuesta: ${response.body}");
-
     if (response.statusCode == 200 && response.body.isNotEmpty) {
-      final decoded = jsonDecode(response.body);
+      final data = jsonDecode(response.body);
 
-      if (decoded is List && decoded.isNotEmpty) {
-        // 🔹 Retornar el último (más reciente)
-        return VehicleModel.fromJson(decoded.last);
+      if (data is List && data.isNotEmpty) {
+        // 🔹 Toma el más reciente
+        final latest = data.first;
+        return VehicleModel.fromJson(latest);
       }
-
-      if (decoded is Map<String, dynamic>) {
-        return VehicleModel.fromJson(decoded);
-      }
-
-      return null;
-    } else {
-      print("⚠️ Error al obtener vehículo: ${response.statusCode}");
-      return null;
     }
+    return null;
   }
 }
