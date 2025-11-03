@@ -31,18 +31,12 @@ class VehicleSummaryPage extends StatelessWidget {
             children: [
               const Text(
                 "Resumen del vehículo",
-                style: TextStyle(
-                  fontSize: 34,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Text(
                 "Verifica la información antes de guardar",
-                style: TextStyle(
-                  fontSize: 20,
-                  color: Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: 20, color: Colors.grey[600]),
               ),
               const SizedBox(height: 24),
 
@@ -130,8 +124,7 @@ class VehicleSummaryPage extends StatelessWidget {
                           child: OutlinedButton(
                             onPressed: () => context.go(AppRoutes.vehicleColor),
                             style: OutlinedButton.styleFrom(
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 14),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
                               side: const BorderSide(
                                 color: Color(0xFF666666),
                                 width: 2,
@@ -159,30 +152,14 @@ class VehicleSummaryPage extends StatelessWidget {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF235EE8),
                               foregroundColor: Colors.white,
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 16),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
                             onPressed: () async {
-                              final prefs =
-                                  await SharedPreferences.getInstance();
-                              final driverUuid =
-                                  prefs.getString('driverUuid');
-
-                              if (driverUuid == null) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                        'No se encontró driverUuid'),
-                                  ),
-                                );
-                                return;
-                              }
-
                               try {
-                                await prov.registerVehicle(driverUuid);
+                                await prov.registerVehicle();
 
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
@@ -194,7 +171,8 @@ class VehicleSummaryPage extends StatelessWidget {
                                   );
 
                                   await Future.delayed(
-                                      const Duration(milliseconds: 500));
+                                    const Duration(milliseconds: 600),
+                                  );
                                   context.go(AppRoutes.home);
                                 }
                               } catch (e) {
@@ -205,6 +183,7 @@ class VehicleSummaryPage extends StatelessWidget {
                                 }
                               }
                             },
+
                             child: const Text(
                               'Guardar vehículo',
                               style: TextStyle(
