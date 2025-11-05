@@ -35,7 +35,6 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       body: GestureDetector(
-        // 🔹 Cierra el teclado si tocas fuera
         onTap: () => FocusScope.of(context).unfocus(),
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -81,7 +80,7 @@ class _LoginPageState extends State<LoginPage> {
 
                 const SizedBox(height: 20),
 
-                // 🔹 Checkbox con texto de términos
+                // 🔹 Checkbox de términos
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
@@ -118,7 +117,7 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                               recognizer: TapGestureRecognizer()
                                 ..onTap = () {
-                                  // context.push(AppRoutes.termsPage);
+                                  // Aquí podrías abrir una página de términos
                                 },
                             ),
                             const TextSpan(text: " y "),
@@ -131,7 +130,7 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                               recognizer: TapGestureRecognizer()
                                 ..onTap = () {
-                                  // context.push(AppRoutes.privacyPage);
+                                  // Aquí podrías abrir aviso de privacidad
                                 },
                             ),
                           ],
@@ -143,7 +142,7 @@ class _LoginPageState extends State<LoginPage> {
 
                 const SizedBox(height: 24),
 
-                // 🔹 Botón de inicio de sesión
+                // 🔹 Botón de login
                 AuthButton(
                   text: "Iniciar sesión",
                   loading: auth.isLoading,
@@ -192,8 +191,9 @@ class _LoginPageState extends State<LoginPage> {
                 const SizedBox(height: 20),
 
                 const SocialLoginButtons(),
-                const SizedBox(height: 40),
+                const SizedBox(height: 27),
 
+                // 🔹 Navegación al registro
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -207,7 +207,9 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     GestureDetector(
                       onTap: () {
-                        // context.push(AppRoutes.register);
+                        context.push(
+                          AppRoutes.register,
+                        ); // ✅ Redirige al registro
                       },
                       child: const Text(
                         "Crea una",
