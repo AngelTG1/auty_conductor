@@ -4,7 +4,7 @@ class AuthModel extends AuthEntity {
   AuthModel({
     required super.uuid,
     required super.driverUuid,
-    required super.licenseNumber, 
+    required super.licenseNumber,
     required super.name,
     required super.email,
     required super.phone,
@@ -12,15 +12,23 @@ class AuthModel extends AuthEntity {
   });
 
   factory AuthModel.fromJson(Map<String, dynamic> json) {
+    // 🔹 Detección flexible: busca datos tanto planos como anidados
+    final user = json['user'] ?? {};
+    final driver = json['driver'] ?? {};
+
     return AuthModel(
-      uuid: json['uuid'] ?? '',
-      driverUuid: json['driverUuid'] ?? json['driver_uuid'] ?? json['driverID'] ?? '',
-      licenseNumber: json['licenseNumber'] ?? json['license_number'] ?? '', 
-      name: json['name'] ?? '',
-      email: json['email'] ?? '',
-      phone: json['phone'] ?? '',
+      uuid: json['uuid'] ?? user['uuid'] ?? '',
+      driverUuid:
+          json['driverUuid'] ?? json['driver_uuid'] ?? driver['uuid'] ?? '',
+      licenseNumber:
+          json['licenseNumber'] ??
+          json['license_number'] ??
+          driver['licenseNumber'] ??
+          '',
+      name: json['name'] ?? user['name'] ?? '',
+      email: json['email'] ?? user['email'] ?? '',
+      phone: json['phone'] ?? user['phone'] ?? '',
       token: json['token'] ?? '',
     );
   }
 }
-

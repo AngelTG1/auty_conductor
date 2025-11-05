@@ -6,7 +6,8 @@ import '../models/vehicle_model.dart';
 import '../../domain/entities/vehicle_entity.dart';
 
 class VehicleRemoteDataSource {
-  final String baseUrl = 'https://backauty-production.up.railway.app/API/v1/vehicles';
+  final String baseUrl =
+      'https://backauty-production.up.railway.app/API/v1/vehicles';
 
   // 🔹 Tipos
   Future<List<VehicleTypeModel>> getTypes() async {
