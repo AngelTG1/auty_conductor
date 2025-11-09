@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/router/app_routes.dart';
 
 class SearchMechanicButton extends StatelessWidget {
-  const SearchMechanicButton({super.key, this.onPressed});
-
-  final VoidCallback? onPressed;
+  const SearchMechanicButton({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea( 
+    return SafeArea(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 0),
         child: Row(
           children: [
-            // 🔹 Botón principal (azul)
             Expanded(
               child: ElevatedButton(
-                onPressed: onPressed ?? () {},
+                onPressed: () {
+                  context.push(AppRoutes.locationMap);
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF235EE8),
                   foregroundColor: Colors.white,
@@ -27,17 +28,11 @@ class SearchMechanicButton extends StatelessWidget {
                 ),
                 child: const Text(
                   'Buscar mecánicos cercanos',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
               ),
             ),
-
             const SizedBox(width: 10),
-
-            // 🔹 Botón de ícono (gris claro)
             Container(
               height: 54,
               width: 54,

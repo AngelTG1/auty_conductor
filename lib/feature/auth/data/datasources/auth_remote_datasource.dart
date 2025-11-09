@@ -2,11 +2,11 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import '../../../../core/http/api_constants.dart'; // 👈 Importa el archivo
 import '../models/auth_model.dart';
 
 class AuthRemoteDataSource {
-  final String baseUrl =
-      'https://backauty-production.up.railway.app/API/v1/auth';
+  final String baseUrl = ApiConstants.auth;
 
   // 🔹 Login normal
   Future<AuthModel> login(String email, String password) async {

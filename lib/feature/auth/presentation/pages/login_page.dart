@@ -62,12 +62,12 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 40),
 
-                // 🔹 Campos de entrada
                 InputField(
                   controller: emailCtrl,
                   label: "Correo electrónico",
                   prefixIcon: Icons.email_outlined,
                   keyboardType: TextInputType.emailAddress,
+                  errorText: auth.emailError, 
                 ),
                 InputField(
                   controller: passCtrl,
@@ -76,11 +76,11 @@ class _LoginPageState extends State<LoginPage> {
                   prefixIcon: Icons.lock_outline,
                   suffixIcon: obscure ? Icons.visibility_off : Icons.visibility,
                   onSuffixTap: () => setState(() => obscure = !obscure),
+                  errorText: auth.passwordError, 
                 ),
 
                 const SizedBox(height: 20),
 
-                // 🔹 Checkbox de términos
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
@@ -115,10 +115,7 @@ class _LoginPageState extends State<LoginPage> {
                                 fontWeight: FontWeight.w700,
                                 decoration: TextDecoration.underline,
                               ),
-                              recognizer: TapGestureRecognizer()
-                                ..onTap = () {
-                                  // Aquí podrías abrir una página de términos
-                                },
+                              recognizer: TapGestureRecognizer()..onTap = () {},
                             ),
                             const TextSpan(text: " y "),
                             TextSpan(
@@ -128,10 +125,7 @@ class _LoginPageState extends State<LoginPage> {
                                 fontWeight: FontWeight.w700,
                                 decoration: TextDecoration.underline,
                               ),
-                              recognizer: TapGestureRecognizer()
-                                ..onTap = () {
-                                  // Aquí podrías abrir aviso de privacidad
-                                },
+                              recognizer: TapGestureRecognizer()..onTap = () {},
                             ),
                           ],
                         ),
@@ -142,7 +136,6 @@ class _LoginPageState extends State<LoginPage> {
 
                 const SizedBox(height: 24),
 
-                // 🔹 Botón de login
                 AuthButton(
                   text: "Iniciar sesión",
                   loading: auth.isLoading,
@@ -166,10 +159,11 @@ class _LoginPageState extends State<LoginPage> {
                           }
 
                           try {
-                            await auth.login(emailCtrl.text, passCtrl.text);
-                            if (context.mounted) {
-                              context.go(AppRoutes.vehicleType);
-                            }
+                            await auth.login(
+                              context,
+                              emailCtrl.text.trim(),
+                              passCtrl.text.trim(),
+                            );
                           } catch (e) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(content: Text(e.toString())),
@@ -190,10 +184,10 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 20),
 
-                const SocialLoginButtons(),
+                // 🔹 AQUÍ QUITAMOS EL const PARA EVITAR PROBLEMAS
+                SocialLoginButtons(),
                 const SizedBox(height: 27),
 
-                // 🔹 Navegación al registro
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -207,9 +201,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     GestureDetector(
                       onTap: () {
-                        context.push(
-                          AppRoutes.register,
-                        ); // ✅ Redirige al registro
+                        context.push(AppRoutes.register);
                       },
                       child: const Text(
                         "Crea una",

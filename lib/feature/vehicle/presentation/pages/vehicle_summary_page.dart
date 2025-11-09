@@ -1,8 +1,8 @@
 import 'package:auty_conductor/feature/vehicle/presentation/providers/vehicle_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lottie/lottie.dart';
 import '../../../../core/router/app_routes.dart';
 
 class VehicleSummaryPage extends StatelessWidget {
@@ -12,7 +12,6 @@ class VehicleSummaryPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final prov = context.watch<VehicleProvider>();
 
-    // 🧩 Validar selección antes de mostrar
     final type = prov.types.firstWhere((t) => t.id == prov.selectedTypeId);
     final brand = prov.brands.firstWhere((b) => b.id == prov.selectedBrandId);
     final color = prov.colors.firstWhere((c) => c.id == prov.selectedColorId);
@@ -158,32 +157,36 @@ class VehicleSummaryPage extends StatelessWidget {
                               ),
                             ),
                             onPressed: () async {
+                              _showSavingDialog(context);
+
                               try {
                                 await prov.registerVehicle();
 
                                 if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        '🚗 Vehículo registrado correctamente',
-                                      ),
-                                    ),
-                                  );
+                                  Navigator.pop(
+                                    context,
+                                  ); // 🔹 Cierra "Guardando"
+
+                                  // 🔹 Muestra animación de éxito
+                                  _showSuccessDialog(context);
 
                                   await Future.delayed(
-                                    const Duration(milliseconds: 600),
+                                    const Duration(
+                                      milliseconds: 2100,
+                                    ), // ⏱️ 2.1 segundos
                                   );
-                                  context.go(AppRoutes.home);
+
+                                  if (context.mounted) {
+                                    Navigator.pop(context); // 🔹 Cierra éxito
+                                    context.go(AppRoutes.home);
+                                  }
                                 }
                               } catch (e) {
                                 if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Error: $e')),
-                                  );
+                                  Navigator.pop(context);
                                 }
                               }
                             },
-
                             child: const Text(
                               'Guardar vehículo',
                               style: TextStyle(
@@ -205,6 +208,7 @@ class VehicleSummaryPage extends StatelessWidget {
     );
   }
 
+  // 🔹 Widget auxiliar de fila
   Widget _infoRow(String key, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
@@ -220,6 +224,74 @@ class VehicleSummaryPage extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  // 🧩 Diálogo con fondo blanco y animación "guardando"
+  void _showSavingDialog(BuildContext context) {
+    showDialog(
+      barrierDismissible: false,
+      barrierColor: Colors.black.withOpacity(0.1),
+      context: context,
+      builder: (_) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          elevation: 6,
+          backgroundColor: Colors.white,
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Lottie.asset(
+                  'assets/animations/saving.json',
+                  width: 180,
+                  height: 180,
+                  repeat: true,
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Guardando vehículo...',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.black87,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // 🟢 Diálogo de éxito con fondo blanco
+  void _showSuccessDialog(BuildContext context) {
+    showDialog(
+      barrierDismissible: false,
+      barrierColor: Colors.black.withOpacity(0.1),
+      context: context,
+      builder: (_) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          elevation: 6,
+          backgroundColor: Colors.white,
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Lottie.asset(
+              'assets/animations/success.json',
+              width: 180,
+              height: 180,
+              repeat: false,
+            ),
+          ),
+        );
+      },
     );
   }
 }
