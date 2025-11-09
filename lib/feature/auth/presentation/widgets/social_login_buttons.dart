@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
-import 'package:go_router/go_router.dart';
-import '../../../../core/router/app_routes.dart';
+import '../../../../core/services/secure_storage_service.dart';
 import '../providers/auth_provider.dart';
-import '../pages/select_role_page.dart'; // ✅ Para redirigir si no tiene rol
-import '../../../../core/services/secure_storage_service.dart'; // ✅ Para leer tokens y datos locales
+import 'terms_modal.dart';
 
 class SocialLoginButtons extends StatelessWidget {
-  const SocialLoginButtons({super.key});
+  SocialLoginButtons({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -20,39 +18,27 @@ class SocialLoginButtons extends StatelessWidget {
             'https://raw.githubusercontent.com/AngelTG1/imagenes-web/refs/heads/main/google.svg',
         onPressed: () async {
           try {
-            await auth.loginWithGoogle();
-
-            if (!context.mounted) return;
-
-            // 🔹 Verifica si ya tiene driverUuid guardado
-            final storedDriverUuid = await SecureStorageService.read(
-              'driverUuid',
+            // Revisar si el usuario ya aceptó términos
+            final acceptedTerms = await SecureStorageService.read(
+              'acceptedTerms',
             );
-            final isDriverFlag = await SecureStorageService.read('isDriver');
 
-            // 🔹 Espera un frame antes de navegar
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if ((isDriverFlag == null || isDriverFlag == 'false') &&
-                  (storedDriverUuid == null || storedDriverUuid.isEmpty)) {
-                // 🧭 Si aún no tiene rol => ir a SelectRolePage
-                context.pushReplacement(
-                  '/select-role',
-                  extra:
-                      auth.user!.uuid, // ✅ Pasamos el UUID al selector de rol
-                );
-              } else {
-                // 🚗 Si ya tiene rol => ir directamente al flujo de conductor
-                context.go(AppRoutes.vehicleType);
-              }
-            });
+            if (acceptedTerms != 'true') {
+              // Mostrar modal si aún no ha aceptado
+              final accepted = await showTermsModal(context);
+              if (!accepted) return; // No puede seguir si no acepta
+            }
+
+            // Si ya aceptó, iniciar sesión con Google
+            await auth.loginWithGoogle(context);
+
+            // Luego dirigirlo según su estado (vehículo, rol, etc.)
+            await auth.checkHasVehicleAndNavigate(context);
           } catch (e) {
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(
-                    'Error al iniciar sesión con Google: $e',
-                    style: const TextStyle(color: Colors.white),
-                  ),
+                  content: Text('Error al iniciar sesión con Google: $e'),
                   backgroundColor: Colors.redAccent,
                 ),
               );
@@ -72,8 +58,8 @@ class SocialLoginButtons extends StatelessWidget {
     return GestureDetector(
       onTap: onPressed,
       child: Container(
-        height: 64, // 🔹 Más pequeño (antes era 64)
-        width: 185, // 🔹 No ocupa todo el ancho
+        height: 64,
+        width: 185,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(10),
@@ -88,26 +74,8 @@ class SocialLoginButtons extends StatelessWidget {
         ),
         child: Center(
           child: isSvg
-              ? SvgPicture.network(
-                  iconUrl,
-                  width: 26, // 🔹 Ícono más chico
-                  height: 26,
-                  placeholderBuilder: (context) => const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                )
-              : Image.network(
-                  iconUrl,
-                  width: 26,
-                  height: 26,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) => const Icon(
-                    Icons.image_not_supported_outlined,
-                    color: Colors.grey,
-                  ),
-                ),
+              ? SvgPicture.network(iconUrl, width: 26, height: 26)
+              : Image.network(iconUrl, width: 26, height: 26),
         ),
       ),
     );

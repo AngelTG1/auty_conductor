@@ -4,15 +4,14 @@ import 'package:http/http.dart' as http;
 import '../../../../core/services/secure_storage_service.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/app_routes.dart';
+import '../../../../core/http/api_constants.dart';
 
 class SelectRolePage extends StatelessWidget {
   final String userUuid;
   const SelectRolePage({super.key, required this.userUuid});
 
   Future<void> updateRole(BuildContext context, bool isDriver) async {
-    final url = Uri.parse(
-      'https://backauty-production.up.railway.app/API/v1/auth/set-role',
-    );
+    final url = Uri.parse('${ApiConstants.auth}/set-role');
 
     try {
       final response = await http.post(
