@@ -5,7 +5,7 @@ import '../../../../core/router/app_router.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/auth_button.dart';
 import '../widgets/input_field.dart';
-import '../widgets/social_login_buttons.dart'; // ✅ Botones Google/Facebook
+import '../widgets/social_login_buttons.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -26,17 +26,6 @@ class _RegisterPageState extends State<RegisterPage> {
   bool acceptedTerms = false;
   bool isDriver = false;
 
-  bool get _isFormValid {
-    return acceptedTerms &&
-        isDriver &&
-        nameCtrl.text.isNotEmpty &&
-        phoneCtrl.text.isNotEmpty &&
-        emailCtrl.text.isNotEmpty &&
-        passCtrl.text.isNotEmpty &&
-        confirmCtrl.text.isNotEmpty &&
-        passCtrl.text == confirmCtrl.text;
-  }
-
   @override
   void dispose() {
     nameCtrl.dispose();
@@ -53,8 +42,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-
-      // 👇 NUEVO: GestureDetector para cerrar teclado
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
         child: SingleChildScrollView(
@@ -63,8 +50,8 @@ class _RegisterPageState extends State<RegisterPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 🔹 Encabezado
-              Row(
-                children: const [
+              const Row(
+                children: [
                   Text(
                     "Regístrate en ",
                     style: TextStyle(
@@ -83,25 +70,28 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                 ],
               ),
-              const SizedBox(height: 5),
+              const SizedBox(height: 12),
 
-              // 🔹 Campos
+              // 🔹 Campos de formulario con errores dinámicos
               InputField(
                 controller: nameCtrl,
                 label: 'Nombre',
                 prefixIcon: Icons.person_outline,
+                errorText: auth.nameError,
               ),
               InputField(
                 controller: phoneCtrl,
                 label: 'Teléfono',
                 keyboardType: TextInputType.phone,
                 prefixIcon: Icons.phone_iphone_outlined,
+                errorText: auth.phoneError,
               ),
               InputField(
                 controller: emailCtrl,
                 label: 'Correo',
                 keyboardType: TextInputType.emailAddress,
                 prefixIcon: Icons.mail_outline,
+                errorText: auth.emailError,
               ),
               InputField(
                 controller: passCtrl,
@@ -112,6 +102,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     ? Icons.visibility
                     : Icons.visibility_off,
                 onSuffixTap: () => setState(() => obscurePass = !obscurePass),
+                errorText: auth.passwordError,
               ),
               InputField(
                 controller: confirmCtrl,
@@ -123,6 +114,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     : Icons.visibility_off,
                 onSuffixTap: () =>
                     setState(() => obscureConfirm = !obscureConfirm),
+                errorText: auth.confirmError,
               ),
 
               const SizedBox(height: 10),
@@ -171,7 +163,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 ],
               ),
 
-              // 🔹 Checkbox de conductor
+              // 🔹 Checkbox de rol
               Row(
                 children: [
                   Checkbox(
@@ -191,13 +183,13 @@ class _RegisterPageState extends State<RegisterPage> {
                 ],
               ),
 
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
 
-              // 🔹 Botón de registro
+              // 🔹 Botón principal
               AuthButton(
-                text: 'Iniciar sesión',
+                text: 'Registrarme',
                 loading: auth.isLoading,
-                onPressed: !_isFormValid
+                onPressed: (!acceptedTerms)
                     ? null
                     : () async {
                         if (passCtrl.text != confirmCtrl.text) {
@@ -210,39 +202,20 @@ class _RegisterPageState extends State<RegisterPage> {
                           return;
                         }
 
-                        try {
-                          await auth.register(
-                            name: nameCtrl.text.trim(),
-                            phone: phoneCtrl.text.trim(),
-                            email: emailCtrl.text.trim(),
-                            password: passCtrl.text.trim(),
-                            isDriver: isDriver,
-                          );
-
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('✅ Registro exitoso'),
-                                backgroundColor: Colors.green,
-                              ),
-                            );
-                            context.go(AppRoutes.login);
-                          }
-                        } catch (e) {
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Error: $e'),
-                                backgroundColor: Colors.redAccent,
-                              ),
-                            );
-                          }
-                        }
+                        await auth.register(
+                          context: context,
+                          name: nameCtrl.text.trim(),
+                          phone: phoneCtrl.text.trim(),
+                          email: emailCtrl.text.trim(),
+                          password: passCtrl.text.trim(),
+                          isDriver: isDriver,
+                        );
                       },
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 25),
 
+              // 🔹 Divider de métodos alternativos
               const Center(
                 child: Text(
                   "O regístrate con",
@@ -256,13 +229,11 @@ class _RegisterPageState extends State<RegisterPage> {
 
               const SizedBox(height: 16),
 
-              const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [SizedBox(width: 300, child: SocialLoginButtons())],
-              ),
+              SocialLoginButtons(),
 
               const SizedBox(height: 28),
 
+              // 🔹 Navegación a Login
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
