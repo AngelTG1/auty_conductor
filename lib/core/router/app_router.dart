@@ -1,43 +1,51 @@
-import 'package:auty_conductor/feature/location/presentation/pages/location_pages.dart';
+import 'package:auty_conductor/feature/profile/presentation/pages/privacy_webview_page.dart';
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
+
+// 🔹 Pages principales
+import 'package:auty_conductor/feature/layout/main_layout.dart';
+import 'package:auty_conductor/feature/location/presentation/pages/location_pages.dart';
+import 'package:auty_conductor/feature/home/presentation/pages/home_page.dart';
+import 'package:auty_conductor/feature/profile/presentation/pages/profile_page.dart';
+
+// 🔹 Pages de autenticación
+import 'package:auty_conductor/feature/auth/presentation/pages/splash_page.dart';
+import 'package:auty_conductor/feature/auth/presentation/pages/login_page.dart';
+import 'package:auty_conductor/feature/auth/presentation/pages/register_page.dart';
+import 'package:auty_conductor/feature/auth/presentation/pages/select_role_page.dart';
+
+// 🔹 Pages de vehículo
 import 'package:auty_conductor/feature/vehicle/presentation/pages/vehicle_type_page.dart';
 import 'package:auty_conductor/feature/vehicle/presentation/pages/vehicle_brands_page.dart';
 import 'package:auty_conductor/feature/vehicle/presentation/pages/vehicle_colors_page.dart';
 import 'package:auty_conductor/feature/vehicle/presentation/pages/vehicle_summary_page.dart';
-import 'package:auty_conductor/feature/home/presentation/pages/home_page.dart';
-import 'package:auty_conductor/feature/auth/presentation/pages/login_page.dart';
-import 'package:auty_conductor/feature/auth/presentation/pages/register_page.dart';
-import 'package:auty_conductor/feature/auth/presentation/pages/splash_page.dart';
-import 'package:auty_conductor/feature/auth/presentation/pages/select_role_page.dart';
+
+import 'package:auty_conductor/feature/request/presentation/pages/express_mechanic_page.dart';
 
 import 'app_routes.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: AppRoutes.splash,
   routes: [
-    // Splash
+    // 🟦 Splash
     GoRoute(path: AppRoutes.splash, builder: (_, __) => const SplashPage()),
 
-    // Login
+    // 🔐 Login
     GoRoute(path: AppRoutes.login, builder: (_, __) => const LoginPage()),
 
-    // Registro
+    // 📝 Registro
     GoRoute(path: AppRoutes.register, builder: (_, __) => const RegisterPage()),
 
-    // Selección de rol
+    // 👤 Selección de rol
     GoRoute(
-      path: '/select-role',
+      path: AppRoutes.selectRole,
       builder: (context, state) {
         final userUuid = state.uri.queryParameters['uuid'] ?? '';
         return SelectRolePage(userUuid: userUuid);
       },
     ),
 
-    // ✅ NUEVA ruta de aceptación de términos
-    // GoRoute(path: '/terms', builder: (_, __) => const TermsAcceptancePage()),
-
-    // Vehículos
+    // 🚗 Registro de vehículo
     GoRoute(
       path: AppRoutes.vehicleType,
       builder: (_, __) => const VehicleTypePage(),
@@ -55,13 +63,24 @@ final GoRouter appRouter = GoRouter(
       builder: (_, __) => const VehicleSummaryPage(),
     ),
 
-    // Home
-    GoRoute(path: AppRoutes.home, builder: (_, __) => const HomePage()),
+    // 🏠 Home dentro del MainLayout (con navegación inferior)
+    GoRoute(path: AppRoutes.home, builder: (_, __) => const MainLayout()),
 
+    // 📍 Mapa de mecánicos
     GoRoute(
       path: AppRoutes.locationMap,
       builder: (_, __) => const LocationPage(),
     ),
+
+    GoRoute(
+      path: AppRoutes.expressMechanic,
+      builder: (_, __) => const ExpressMechanicPage(),
+    ),
+    GoRoute(
+  path: AppRoutes.privacyWeb,
+  builder: (context, state) => const PrivacyWebViewPage(),
+),
+
   ],
 );
 
@@ -71,11 +90,19 @@ class AppRoutes {
   static const register = '/register';
   static const selectRole = '/select-role';
   static const terms = '/terms';
+
+  // 🚗 Vehículos
   static const vehicleType = '/vehicle/type';
   static const vehicleBrand = '/vehicle/brand';
   static const vehicleColor = '/vehicle/color';
   static const vehicleSummary = '/vehicle/summary';
-  static const home = '/home';
 
-    static const locationMap = '/location/map';
+  // 🏠 Principal
+  static const home = '/home';
+  static const expressMechanic = '/mechanic/express';
+  // 📍 Mapa
+  static const locationMap = '/location/map';
+
+  static const privacyWeb = '/privacy-web';
+
 }

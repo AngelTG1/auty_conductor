@@ -173,7 +173,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     activeColor: const Color(0xFF1E329D),
                   ),
                   const Text(
-                    'Soy mecánico',
+                    'Soy conductor',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,

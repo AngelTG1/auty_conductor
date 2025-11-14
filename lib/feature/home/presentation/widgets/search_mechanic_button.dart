@@ -15,7 +15,7 @@ class SearchMechanicButton extends StatelessWidget {
             Expanded(
               child: ElevatedButton(
                 onPressed: () {
-                  context.push(AppRoutes.locationMap);
+                  _showMechanicOptions(context);
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF235EE8),
@@ -49,6 +49,69 @@ class SearchMechanicButton extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  /// 🧩 Modal inferior con opciones
+  void _showMechanicOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      ),
+      backgroundColor: Colors.white,
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildOption(
+                  context,
+                  icon: Icons.flash_on,
+                  text: 'Mecánico express',
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.push(AppRoutes.expressMechanic);
+                  },
+                ),
+                const Divider(height: 0),
+                _buildOption(
+                  context,
+                  icon: Icons.location_searching_outlined,
+                  text: 'Buscar mecánicos cercanos',
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.push(AppRoutes.locationMap);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// 🔹 Estilo de opción dentro del modal
+  Widget _buildOption(
+    BuildContext context, {
+    required IconData icon,
+    required String text,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      leading: Icon(icon, color: const Color(0xFF235EE8)),
+      title: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 16,
+          color: Colors.black87,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      onTap: onTap,
     );
   }
 }

@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:math' show min, max;
-import 'package:auty_conductor/core/http/api_constants.dart';
 import 'package:auty_conductor/core/services/analytics_service.dart';
 import 'package:auty_conductor/feature/location/domain/entities/location_entity.dart';
 import 'package:flutter/material.dart';
@@ -11,6 +10,7 @@ import 'package:geocoding/geocoding.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
+import 'package:shimmer/shimmer.dart'; // 👈 agregado
 
 // 🔹 Providers
 import '../provider/location_provider.dart';
@@ -245,7 +245,7 @@ class _LocationPageState extends State<LocationPage> {
           children: [
             Positioned.fill(
               child: _currentPosition == null
-                  ? const Center(child: CircularProgressIndicator())
+                  ? _buildMapSkeleton() // 👈 shimmer mientras carga mapa
                   : GoogleMap(
                       initialCameraPosition: CameraPosition(
                         target: _currentPosition!,
@@ -370,7 +370,6 @@ class _LocationPageState extends State<LocationPage> {
     );
   }
 
-  // ✅ RESTAURADO: botón “X” en lista de mecánicos
   Widget _buildMechanicList(List<LocationEntity> mecanicos) {
     return Positioned(
       bottom: 0,
@@ -486,6 +485,51 @@ class _LocationPageState extends State<LocationPage> {
             _polylines.clear();
           });
         },
+      ),
+    );
+  }
+
+  /// 💫 Skeleton de mapa (mientras se carga ubicación)
+  Widget _buildMapSkeleton() {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey.shade300,
+      highlightColor: Colors.grey.shade100,
+      child: Container(
+        color: Colors.grey.shade200,
+        child: Stack(
+          children: [
+            Positioned.fill(child: Container(color: Colors.white)),
+            Align(
+              alignment: Alignment.topCenter,
+              child: Container(
+                margin: const EdgeInsets.only(top: 40),
+                width: 200,
+                height: 20,
+                color: Colors.white,
+              ),
+            ),
+            Align(
+              alignment: Alignment.center,
+              child: Container(
+                width: 100,
+                height: 100,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 40),
+                width: 260,
+                height: 50,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

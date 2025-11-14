@@ -9,7 +9,11 @@ class AppRoutes {
   static const vehicleColor = '/vehicle/color';
   static const vehicleSummary = '/vehicle/summary';
   static const home = '/home';
+  static const expressMechanic = '/mechanic/express';
 
-    // 🌍 Nueva ruta para el mapa
+  // 🌍 Nueva ruta para el mapa
   static const locationMap = '/location/map';
+
+  static const privacyWeb = '/privacy-web';
+
 }
