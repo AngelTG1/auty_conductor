@@ -1,7 +1,7 @@
 import 'package:auty_conductor/feature/profile/presentation/pages/data_perfil_page.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shimmer/shimmer.dart'; // 👈 shimmer agregado
+import 'package:shimmer/shimmer.dart';
 import 'package:auty_conductor/core/services/secure_storage_service.dart';
 import 'package:auty_conductor/core/utils/safe_async_state.dart';
 import 'package:auty_conductor/core/router/app_routes.dart';
@@ -17,8 +17,6 @@ class _ProfilePageState extends State<ProfilePage> with SafeAsyncState {
   bool loading = true;
   String? userName;
   String? userEmail;
-  String? userPhone;
-  String? userLicense;
 
   @override
   void initState() {
@@ -33,8 +31,9 @@ class _ProfilePageState extends State<ProfilePage> with SafeAsyncState {
   }
 
   Future<void> _loadProfile() async {
-    if (!loading) return; // ✅ evita recargar
+    if (!loading) return;
     await Future.delayed(const Duration(seconds: 2));
+
     final name = await SecureStorageService.read('userName');
     final email = await SecureStorageService.read('userEmail');
 
@@ -47,21 +46,31 @@ class _ProfilePageState extends State<ProfilePage> with SafeAsyncState {
   }
 
   Future<void> _confirmLogout() async {
+    final width = MediaQuery.of(context).size.width;
+    final double dialogFont = width * 0.030; // 14–18
+    final double buttonFont = width * 0.030; // 14–18
+
     final shouldLogout = await showDialog<bool>(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('¿Cerrar sesión?'),
-          content: const Text('¿Estás seguro de que deseas cerrar sesión?'),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            '¿Cerrar sesión?',
+            style: TextStyle(fontSize: dialogFont, fontWeight: FontWeight.bold),
+          ),
+          content: Text(
+            '¿Estás seguro de que deseas cerrar sesión?',
+            style: TextStyle(fontSize: dialogFont * 0.9),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text(
+              child: Text(
                 'Cancelar',
-                style: TextStyle(color: Colors.grey),
+                style: TextStyle(color: Colors.grey, fontSize: buttonFont),
               ),
             ),
             ElevatedButton(
@@ -70,7 +79,10 @@ class _ProfilePageState extends State<ProfilePage> with SafeAsyncState {
                 backgroundColor: const Color(0xFF235EE8),
                 foregroundColor: Colors.white,
               ),
-              child: const Text('Cerrar sesión'),
+              child: Text(
+                'Cerrar sesión',
+                style: TextStyle(fontSize: buttonFont),
+              ),
             ),
           ],
         );
@@ -86,29 +98,42 @@ class _ProfilePageState extends State<ProfilePage> with SafeAsyncState {
 
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+
+    // 🔹 valores responsivos
+    final double titleFont = width * 0.045; // ~20
+    final double avatarRadius = width * 0.060; // 18–24
+    final double avatarIcon = width * 0.056; // 18–22
+    final double nameFont = width * 0.035;
+    final double emailFont = width * 0.028;
+    final double cardPadding = width * 0.045;
+    final double spacing = width * 0.035;
+    final double optionIcon = width * 0.065; // 22–28
+    final double optionFont = width * 0.04; // 14–16
+
     return Scaffold(
       backgroundColor: const Color(0xFFFFFFFF),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(14),
+          padding: EdgeInsets.all(width * 0.04),
           child: loading
-              ? const _ProfileSkeleton() // 👈 loading shimmer aquí
+              ? const _ProfileSkeleton()
               : Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Text(
                       "Configuración de perfil",
-                      style: const TextStyle(
-                        fontSize: 20,
+                      style: TextStyle(
+                        fontSize: titleFont,
                         fontWeight: FontWeight.bold,
                         color: Colors.black87,
                       ),
                     ),
-                    const SizedBox(height: 15),
+                    SizedBox(height: spacing * 1.5),
 
-                    // 🔹 Perfil card
+                    // 🔹 CARD superior del usuario
                     Container(
-                      padding: const EdgeInsets.all(16),
+                      padding: EdgeInsets.all(cardPadding),
                       decoration: BoxDecoration(
                         color: const Color(0xFFFAFAFA),
                         borderRadius: const BorderRadius.only(
@@ -122,34 +147,35 @@ class _ProfilePageState extends State<ProfilePage> with SafeAsyncState {
                       ),
                       child: Row(
                         children: [
-                          const CircleAvatar(
-                            radius: 20,
-                            backgroundColor: Color(0xFF235EE8),
+                          CircleAvatar(
+                            radius: avatarRadius,
+                            backgroundColor: const Color(0xFF235EE8),
                             child: Icon(
                               Icons.person,
                               color: Colors.white,
-                              size: 20,
+                              size: avatarIcon,
                             ),
                           ),
-                          const SizedBox(width: 10),
+                          SizedBox(width: spacing),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   userName ?? '',
-                                  style: const TextStyle(
-                                    fontSize: 17,
+                                  style: TextStyle(
+                                    fontSize: nameFont,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.black87,
                                   ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                                 Text(
                                   userEmail ?? '',
-                                  style: const TextStyle(
-                                    fontSize: 13,
+                                  style: TextStyle(
+                                    fontSize: emailFont,
                                     color: Colors.black54,
                                   ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ],
                             ),
@@ -158,11 +184,11 @@ class _ProfilePageState extends State<ProfilePage> with SafeAsyncState {
                       ),
                     ),
 
-                    // 🔹 Botón cerrar sesión
+                    // 🔹 Botón de Cerrar sesión
                     GestureDetector(
                       onTap: _confirmLogout,
                       child: Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: EdgeInsets.all(cardPadding),
                         decoration: BoxDecoration(
                           color: const Color(0xFFFAFAFA),
                           borderRadius: const BorderRadius.only(
@@ -174,30 +200,37 @@ class _ProfilePageState extends State<ProfilePage> with SafeAsyncState {
                             width: 0.5,
                           ),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
                               "Cerrar sesión",
                               style: TextStyle(
-                                fontSize: 16,
+                                fontSize: optionFont,
                                 color: Colors.blue,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                            SizedBox(width: 10),
-                            Icon(Icons.logout_rounded, color: Colors.blue),
+                            SizedBox(width: spacing),
+                            Icon(
+                              Icons.logout_rounded,
+                              color: Colors.blue,
+                              size: optionIcon * 0.8,
+                            ),
                           ],
                         ),
                       ),
                     ),
 
-                    const SizedBox(height: 24),
+                    SizedBox(height: spacing * 2),
 
+                    // 🔹 Lista de opciones
                     _buildOptionCard(
                       Icons.person_outline_rounded,
                       "Perfil",
                       Colors.black87,
+                      optionIcon,
+                      optionFont,
                       onTap: () {
                         Navigator.push(
                           context,
@@ -207,23 +240,29 @@ class _ProfilePageState extends State<ProfilePage> with SafeAsyncState {
                         );
                       },
                     ),
-                    const SizedBox(height: 10),
+                    SizedBox(height: spacing),
                     _buildOptionCard(
                       Icons.lock_outline,
                       "Seguridad de la cuenta",
                       Colors.black87,
+                      optionIcon,
+                      optionFont,
                     ),
-                    const SizedBox(height: 10),
+                    SizedBox(height: spacing),
                     _buildOptionCard(
                       Icons.delete_outlined,
                       "Eliminar cuenta",
                       Colors.black,
+                      optionIcon,
+                      optionFont,
                     ),
-                    const SizedBox(height: 10),
+                    SizedBox(height: spacing),
                     _buildOptionCard(
                       Icons.privacy_tip_outlined,
                       "Política de privacidad",
                       Colors.black,
+                      optionIcon,
+                      optionFont,
                       onTap: () {
                         context.push(AppRoutes.privacyWeb);
                       },
@@ -238,13 +277,15 @@ class _ProfilePageState extends State<ProfilePage> with SafeAsyncState {
   Widget _buildOptionCard(
     IconData icon,
     String text,
-    Color iconColor, {
-    VoidCallback? onTap, // 👈 nuevo parámetro opcional
+    Color iconColor,
+    double iconSize,
+    double textFont, {
+    VoidCallback? onTap,
   }) {
     return GestureDetector(
-      onTap: onTap, // 👈 ahora responde al toque
+      onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(iconSize * 0.6),
         decoration: BoxDecoration(
           color: const Color(0xFFFAFAFA),
           borderRadius: BorderRadius.circular(12),
@@ -255,21 +296,21 @@ class _ProfilePageState extends State<ProfilePage> with SafeAsyncState {
           children: [
             Row(
               children: [
-                Icon(icon, size: 25, color: iconColor),
-                const SizedBox(width: 10),
+                Icon(icon, size: iconSize, color: iconColor),
+                SizedBox(width: iconSize * 0.5),
                 Text(
                   text,
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: textFont,
                     fontWeight: FontWeight.w600,
                     color: iconColor,
                   ),
                 ),
               ],
             ),
-            const Icon(
+            Icon(
               Icons.arrow_forward_ios,
-              size: 16,
+              size: iconSize * 0.55,
               color: Colors.black87,
             ),
           ],
@@ -284,6 +325,8 @@ class _ProfileSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+
     return Shimmer.fromColors(
       baseColor: Colors.grey.shade300,
       highlightColor: Colors.grey.shade100,
@@ -291,15 +334,14 @@ class _ProfileSkeleton extends StatelessWidget {
         children: [
           Container(
             margin: const EdgeInsets.only(top: 20, bottom: 15),
-            height: 20,
-            width: 180,
+            height: width * 0.05,
+            width: width * 0.45,
             color: Colors.white,
           ),
-          const SizedBox(height: 10),
           for (int i = 0; i < 4; i++)
             Container(
               margin: const EdgeInsets.only(bottom: 12),
-              height: 70,
+              height: width * 0.18,
               width: double.infinity,
               decoration: BoxDecoration(
                 color: Colors.white,

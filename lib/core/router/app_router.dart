@@ -1,12 +1,11 @@
+import 'package:auty_conductor/feature/location/presentation/pages/driver_tracking_mechanic_page.dart';
+import 'package:auty_conductor/feature/location/presentation/pages/mechanic_info_page.dart';
 import 'package:auty_conductor/feature/profile/presentation/pages/privacy_webview_page.dart';
-import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
 // 🔹 Pages principales
 import 'package:auty_conductor/feature/layout/main_layout.dart';
 import 'package:auty_conductor/feature/location/presentation/pages/location_pages.dart';
-import 'package:auty_conductor/feature/home/presentation/pages/home_page.dart';
-import 'package:auty_conductor/feature/profile/presentation/pages/profile_page.dart';
 
 // 🔹 Pages de autenticación
 import 'package:auty_conductor/feature/auth/presentation/pages/splash_page.dart';
@@ -20,9 +19,8 @@ import 'package:auty_conductor/feature/vehicle/presentation/pages/vehicle_brands
 import 'package:auty_conductor/feature/vehicle/presentation/pages/vehicle_colors_page.dart';
 import 'package:auty_conductor/feature/vehicle/presentation/pages/vehicle_summary_page.dart';
 
+// 🔹 Mecánico Express
 import 'package:auty_conductor/feature/request/presentation/pages/express_mechanic_page.dart';
-
-import 'app_routes.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: AppRoutes.splash,
@@ -63,24 +61,48 @@ final GoRouter appRouter = GoRouter(
       builder: (_, __) => const VehicleSummaryPage(),
     ),
 
-    // 🏠 Home dentro del MainLayout (con navegación inferior)
+    // 🏠 Home
     GoRoute(path: AppRoutes.home, builder: (_, __) => const MainLayout()),
 
-    // 📍 Mapa de mecánicos
+    // 📍 Mapa
     GoRoute(
       path: AppRoutes.locationMap,
       builder: (_, __) => const LocationPage(),
     ),
 
+    // ⚡ Mecánico Express
     GoRoute(
       path: AppRoutes.expressMechanic,
-      builder: (_, __) => const ExpressMechanicPage(),
+      builder: (context, state) {
+        final args = state.extra as Map<String, dynamic>?; // <-- Recibe MAP
+        final mechanicUuid = args?["mechanicUuid"] as String?;
+        return ExpressMechanicPage(mechanicUuid: mechanicUuid);
+      },
     ),
-    GoRoute(
-  path: AppRoutes.privacyWeb,
-  builder: (context, state) => const PrivacyWebViewPage(),
-),
 
+    // 🌐 Aviso de privacidad
+    GoRoute(
+      path: AppRoutes.privacyWeb,
+      builder: (_, __) => const PrivacyWebViewPage(),
+    ),
+
+    // ℹ Información del mecánico
+    GoRoute(
+      path: "/mechanic-info",
+      builder: (context, state) {
+        final mechanicUuid = state.extra as String; // <-- Recibe SOLO STRING
+        return MechanicInfoPage(mechanicUuid: mechanicUuid);
+      },
+    ),
+
+    // 🚗 Seguimiento en vivo del mecánico (driver)
+    GoRoute(
+      path: AppRoutes.driverTrackingMechanic,
+      builder: (context, state) {
+        final request = state.extra as Map<String, dynamic>;
+        return DriverTrackingMechanicPage(request: request);
+      },
+    ),
   ],
 );
 
@@ -99,10 +121,13 @@ class AppRoutes {
 
   // 🏠 Principal
   static const home = '/home';
-  static const expressMechanic = '/mechanic/express';
+  static const driverTrackingMechanic = '/tracking/mechanic';
+
+  // ⚡ Mecánico express
+  static const expressMechanic = '/express-mechanic';
+
   // 📍 Mapa
   static const locationMap = '/location/map';
 
   static const privacyWeb = '/privacy-web';
-
 }

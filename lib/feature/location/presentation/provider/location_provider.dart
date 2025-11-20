@@ -97,4 +97,18 @@ class LocationProvider extends ChangeNotifier {
     final c = 2 * atan2(sqrt(a), sqrt(1 - a));
     return r * c;
   }
+
+  Map<String, dynamic>? selectedWorkshop;
+
+  Future<void> loadWorkshopInfo(String mechanicUuid) async {
+    try {
+      final url = '${ApiConstants.location}/workshops/$mechanicUuid';
+      final response = await _dio.get(url);
+
+      selectedWorkshop = response.data;
+      notifyListeners();
+    } catch (e) {
+      debugPrint("❌ Error cargando info del mecánico: $e");
+    }
+  }
 }

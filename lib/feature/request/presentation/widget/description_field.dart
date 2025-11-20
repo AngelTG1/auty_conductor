@@ -1,8 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 class DescriptionField extends StatefulWidget {
   final TextEditingController controller;
-  final Function onValidate;
+  final VoidCallback onValidate;
 
   const DescriptionField({
     super.key,
@@ -15,54 +16,106 @@ class DescriptionField extends StatefulWidget {
 }
 
 class _DescriptionFieldState extends State<DescriptionField> {
+  late final ValueNotifier<int> _wordCount;
+  Timer? _debounce;
+
+  @override
+  void initState() {
+    super.initState();
+    _wordCount = ValueNotifier(_initialCount(widget.controller.text));
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _wordCount.dispose();
+    super.dispose();
+  }
+
+  // -------------------------------------------------------
+  // MÉTODOS
+  // -------------------------------------------------------
+  static int _initialCount(String text) {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return 0;
+    return trimmed.split(RegExp(r"\s+")).length;
+  }
+
+  int _countWords(String text) {
+    if (text.trim().isEmpty) return 0;
+    return text.trim().split(RegExp(r'\s+')).length;
+  }
+
+  void _onTextChanged(String value) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 90), () {
+      final count = _countWords(value);
+
+      if (_wordCount.value != count) {
+        _wordCount.value = count;
+      }
+
+      widget.onValidate(); // 👈 ahora usa widget.onValidate
+    });
+  }
+
+  // -------------------------------------------------------
+  // UI
+  // -------------------------------------------------------
   @override
   Widget build(BuildContext context) {
-    int wordCount = widget.controller.text.trim().isEmpty
-        ? 0
-        : widget.controller.text.trim().split(RegExp(r'\s+')).length;
+    const labelColor = Color(0xFF2C2C2C);
+    const borderColor = Color(0xFFE1E1E1);
 
-    return Stack(
-      alignment: Alignment.bottomRight,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        TextField(
-          controller: widget.controller,
-          maxLines: 5,
-          onChanged: (value) {
-            final words = value.trim().split(RegExp(r'\s+'));
-            if (words.length > 310) {
-              widget.controller.text = words.take(310).join(' ');
-              widget.controller.selection = TextSelection.fromPosition(
-                TextPosition(offset: widget.controller.text.length),
-              );
-            }
-            setState(() {});
-            widget.onValidate();
-          },
-          decoration: InputDecoration(
-            hintText: 'Dinos los detalles del problema que tiene ahora mismo',
-            hintStyle: const TextStyle(
-              color: Color(0xFFA3A3A3),
-              fontSize: 15,
-            ),
-            filled: true,
-            fillColor: Colors.grey.shade100,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
-            contentPadding: const EdgeInsets.fromLTRB(14, 1, 5, 20),
+        const Text(
+          "Descripción",
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: labelColor,
           ),
-          style: const TextStyle(fontSize: 15, color: Colors.black87),
         ),
-        Positioned(
-          bottom: 8,
-          right: 14,
-          child: Text(
-            "$wordCount/310",
-            style: TextStyle(
-              fontSize: 13,
-              color: wordCount >= 310 ? Colors.redAccent : Colors.grey,
-            ),
+        const SizedBox(height: 6),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: borderColor),
+          ),
+          child: Stack(
+            children: [
+              TextField(
+                controller: widget.controller,
+                maxLines: 5,
+                onChanged: _onTextChanged,
+                decoration: const InputDecoration(
+                  hintText: "Describe claramente lo que ocurrió...",
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.fromLTRB(16, 14, 16, 28),
+                ),
+                style: const TextStyle(fontSize: 15, color: labelColor),
+              ),
+              Positioned(
+                bottom: 8,
+                right: 12,
+                child: ValueListenableBuilder<int>(
+                  valueListenable: _wordCount,
+                  builder: (_, count, __) {
+                    final limit = count >= 310;
+                    return Text(
+                      "$count/310",
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: limit ? Colors.redAccent : Colors.grey.shade600,
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
         ),
       ],

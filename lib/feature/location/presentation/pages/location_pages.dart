@@ -10,13 +10,12 @@ import 'package:geocoding/geocoding.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
-import 'package:shimmer/shimmer.dart'; // 👈 agregado
+import 'package:shimmer/shimmer.dart';
+import 'package:go_router/go_router.dart';
 
-// 🔹 Providers
+import '../../../../core/router/app_routes.dart';
 import '../provider/location_provider.dart';
 import '../provider/tracking_provider.dart';
-
-// 🔹 Widgets personalizados
 import '../widget/mechanic_card.dart';
 import '../widget/selected_mechanic_card.dart';
 
@@ -79,7 +78,7 @@ class _LocationPageState extends State<LocationPage> {
     }
   }
 
-  /// 🔍 Buscar mecánicos cercanos con el provider
+  /// 🔍 Buscar mecánicos cercanos
   Future<void> _buscarMecanicosCercanos() async {
     if (_currentPosition == null) return;
 
@@ -133,7 +132,7 @@ class _LocationPageState extends State<LocationPage> {
     }
   }
 
-  /// 🗺️ Mostrar ruta usando flutter_polyline_points
+  /// 🗺️ Mostrar ruta
   Future<void> _mostrarRuta(LocationEntity mecanico) async {
     if (_currentPosition == null) return;
 
@@ -245,7 +244,7 @@ class _LocationPageState extends State<LocationPage> {
           children: [
             Positioned.fill(
               child: _currentPosition == null
-                  ? _buildMapSkeleton() // 👈 shimmer mientras carga mapa
+                  ? _buildMapSkeleton()
                   : GoogleMap(
                       initialCameraPosition: CameraPosition(
                         target: _currentPosition!,
@@ -259,10 +258,8 @@ class _LocationPageState extends State<LocationPage> {
                     ),
             ),
 
-            // 🔹 Caja superior
             Positioned(top: 20, left: 20, right: 20, child: _buildTopInfo()),
 
-            // 🔹 Botón buscar mecánicos
             if (mecanicos.isEmpty && !_buscando && selected == null)
               _buildBuscarButton(),
 
@@ -278,18 +275,28 @@ class _LocationPageState extends State<LocationPage> {
     );
   }
 
+  /// 🔵 Caja superior
   Widget _buildTopInfo() {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         GestureDetector(
-          onTap: () {
-            Navigator.pop(context);
+          onTap: () async {
             setState(() {
               _selectedMechanic = null;
               _markers.clear();
               _polylines.clear();
+              context.read<LocationProvider>().mechanics.clear();
             });
+            context.pop();
+
+            if (_currentPosition != null && _mapController != null) {
+              await _mapController!.animateCamera(
+                CameraUpdate.newCameraPosition(
+                  CameraPosition(target: _currentPosition!, zoom: 15),
+                ),
+              );
+            }
           },
           child: Container(
             width: 40,
@@ -458,9 +465,27 @@ class _LocationPageState extends State<LocationPage> {
                       'lng': m.lng,
                       'name': m.name,
                       'distance': m.distance,
+                      'address': m.address,
                     },
                     distanceText: _formatDistance(m.distance!),
                     onRoutePressed: () => _mostrarRuta(m),
+
+                    onRequestPressed: () {
+                      if (_currentPosition == null) return;
+
+                      context.push(
+                        AppRoutes.expressMechanic,
+                        extra: {
+                          'mechanicUuid': m.uuid,
+                          'mechanicName': m.name,
+                          'mechanicLat': m.lat,
+                          'mechanicLng': m.lng,
+                          'userLat': _currentPosition!.latitude,
+                          'userLng': _currentPosition!.longitude,
+                          'userAddress': _currentAddress,
+                        },
+                      );
+                    },
                   );
                 },
               ),
@@ -489,7 +514,7 @@ class _LocationPageState extends State<LocationPage> {
     );
   }
 
-  /// 💫 Skeleton de mapa (mientras se carga ubicación)
+  /// Skeleton de carga
   Widget _buildMapSkeleton() {
     return Shimmer.fromColors(
       baseColor: Colors.grey.shade300,

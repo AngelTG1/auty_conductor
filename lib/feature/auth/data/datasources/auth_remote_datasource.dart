@@ -2,31 +2,40 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import '../../../../core/http/api_constants.dart'; // 👈 Importa el archivo
+
+import '../../../../core/http/api_constants.dart';
 import '../models/auth_model.dart';
 
 class AuthRemoteDataSource {
   final String baseUrl = ApiConstants.auth;
 
-  // 🔹 Login normal
+  // ===============================
+  // 🔹 LOGIN NORMAL (CON appType)
+  // ===============================
   Future<AuthModel> login(String email, String password) async {
     final url = Uri.parse('$baseUrl/login');
     final response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'email': email, 'password': password}),
+      body: jsonEncode({
+        'email': email,
+        'password': password,
+        'appType': 'driver', // 👈 IMPORTANTE PARA ESTA APP
+      }),
     );
 
+    final json = jsonDecode(response.body);
+
     if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      return AuthModel.fromJson(data);
+      return AuthModel.fromJson(json);
     } else {
-      final error = jsonDecode(response.body);
-      throw Exception(error['message'] ?? 'Error de autenticación');
+      throw Exception(json['message'] ?? 'Error de autenticación');
     }
   }
 
-  // 🔹 Registro normal con isDriver
+  // ===============================
+  // 🔹 REGISTER NORMAL (driver)
+  // ===============================
   Future<AuthModel> register(
     String name,
     String phone,
@@ -44,34 +53,39 @@ class AuthRemoteDataSource {
         'email': email,
         'password': password,
         'confirmPassword': password,
-        'isDriver': isDriver, // ✅ ahora enviamos el rol al backend
+        'isDriver': isDriver,
       }),
     );
 
+    final json = jsonDecode(response.body);
+
     if (response.statusCode == 201) {
-      final data = jsonDecode(response.body);
-      return AuthModel.fromJson(data);
+      return AuthModel.fromJson(json);
     } else {
-      final error = jsonDecode(response.body);
-      throw Exception(error['message'] ?? 'Error al registrar usuario');
+      throw Exception(json['message'] ?? 'Error al registrar usuario');
     }
   }
 
-  // 🔹 Login con Google
+  // ===============================
+  // 🔥 LOGIN CON GOOGLE (SIMPLE)
+  // ===============================
   Future<AuthModel> loginWithGoogle() async {
-    final googleUser = await GoogleSignIn().signIn();
-    if (googleUser == null) throw Exception('Inicio de sesión cancelado');
+    final GoogleSignInAccount? gUser = await GoogleSignIn().signIn();
+    if (gUser == null) throw Exception("Inicio de sesión cancelado");
 
-    final googleAuth = await googleUser.authentication;
+    final gAuth = await gUser.authentication;
 
     final credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
+      idToken: gAuth.idToken,
+      accessToken: gAuth.accessToken,
     );
+
     await FirebaseAuth.instance.signInWithCredential(credential);
 
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
-    if (idToken == null) throw Exception('Error obteniendo ID Token');
+    if (idToken == null) {
+      throw Exception("No se pudo obtener el ID Token de Firebase");
+    }
 
     final url = Uri.parse('$baseUrl/google');
     final response = await http.post(
@@ -80,14 +94,12 @@ class AuthRemoteDataSource {
       body: jsonEncode({'idToken': idToken}),
     );
 
+    final data = jsonDecode(response.body);
+
     if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
       return AuthModel.fromJson(data);
     } else {
-      final error = jsonDecode(response.body);
-      throw Exception(
-        error['message'] ?? 'Error en inicio de sesión con Google',
-      );
+      throw Exception(data['message'] ?? 'Error en inicio con Google');
     }
   }
 }

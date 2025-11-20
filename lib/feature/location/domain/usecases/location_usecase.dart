@@ -11,6 +11,15 @@ class GetAllMechanicsUseCase {
   }
 }
 
+class GetWorkshopByIdUseCase {
+  final LocationRepository repository;
+  GetWorkshopByIdUseCase(this.repository);
+
+  Future<Map<String, dynamic>> call(String mechanicUuid) {
+    return repository.getWorkshopById(mechanicUuid);
+  }
+}
+
 class CalculateDistanceUseCase {
   final LocationRepository repository;
 

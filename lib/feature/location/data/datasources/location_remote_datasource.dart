@@ -27,4 +27,12 @@ class LocationRemoteDataSource {
     );
     return response.data as Map<String, dynamic>;
   }
+
+  /// 🔹 Obtener información completa de un mecánico
+  Future<Map<String, dynamic>> getWorkshopById(String mechanicUuid) async {
+    final response = await _dio.get(
+      '${ApiConstants.location}/workshops/$mechanicUuid',
+    );
+    return response.data as Map<String, dynamic>;
+  }
 }

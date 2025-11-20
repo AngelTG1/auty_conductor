@@ -16,4 +16,5 @@ class AppRoutes {
 
   static const privacyWeb = '/privacy-web';
 
+  static const driverTrackingMechanic = '/tracking/mechanic';
 }
