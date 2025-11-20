@@ -5,6 +5,14 @@ class HomeMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+
+    // 🔹 Valores responsivos
+    final double iconSize = width * 0.072; 
+    final double fontSize = width * 0.028; 
+    final double verticalPadding = width * 0.033;
+    final double borderRadius = width * 0.03;
+
     final items = [
       {'icon': Icons.attach_money, 'label': 'Precio'},
       {'icon': Icons.control_point, 'label': 'Puntos'},
@@ -13,41 +21,42 @@ class HomeMenu extends StatelessWidget {
     ];
 
     return Padding(
-      padding: const EdgeInsets.only(top: 18),
+      padding: EdgeInsets.only(top: width * 0.045),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: items.map((item) {
           return Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 2),
+              padding: EdgeInsets.symmetric(horizontal: width * 0.01),
               child: InkWell(
-                borderRadius: BorderRadius.circular(16),
-                onTap: () {
-                  // 🚀 Aquí pondrás tu navegación más adelante, ejemplo:
-                  // context.go(AppRoutes.price);
-                  debugPrint('➡️ ${item['label']} presionado');
-                },
+                borderRadius: BorderRadius.circular(borderRadius),
+                onTap: () => debugPrint('➡️ ${item['label']} presionado'),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  padding: EdgeInsets.symmetric(vertical: verticalPadding),
                   decoration: BoxDecoration(
-                    border: Border.all(color: Color(0xFFD9D9D9), width: 1.5),
-                    borderRadius: BorderRadius.circular(20),
-                    color: Color(0xFFF8F8F8),
+                    border: Border.all(
+                      color: const Color(0xFFD9D9D9),
+                      width: width * 0.003,
+                    ),
+                    borderRadius: BorderRadius.circular(borderRadius),
+                    color: const Color(0xFFF8F8F8),
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
                         item['icon'] as IconData,
-                        color: Color(0xFF494949),
-                        size: 28,
+                        color: const Color(0xFF494949),
+                        size: iconSize,
                       ),
-                      const SizedBox(height: 6),
+
+                      SizedBox(height: width * 0.015),
+
                       Text(
                         item['label'] as String,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF494949),
+                        style: TextStyle(
+                          fontSize: fontSize,
+                          color: const Color(0xFF494949),
                           fontWeight: FontWeight.w500,
                         ),
                       ),

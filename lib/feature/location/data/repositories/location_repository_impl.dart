@@ -19,4 +19,9 @@ class LocationRepositoryImpl implements LocationRepository {
   ) {
     return remoteDataSource.calculateDistance(origin, destination);
   }
+
+  @override
+  Future<Map<String, dynamic>> getWorkshopById(String mechanicUuid) {
+    return remoteDataSource.getWorkshopById(mechanicUuid);
+  }
 }
