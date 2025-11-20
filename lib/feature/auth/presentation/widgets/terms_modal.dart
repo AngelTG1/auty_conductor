@@ -52,31 +52,20 @@ Future<bool> showTermsModal(BuildContext context) async {
                       ),
                     ),
                     const SizedBox(height: 16),
+
                     GestureDetector(
-                      onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Abrir página de Términos y Aviso de Privacidad',
-                            ),
-                            duration: Duration(seconds: 2),
-                          ),
-                        );
-                      },
+                      onTap: () {},
                       child: const Text(
                         'Términos y Condiciones y Aviso de Privacidad',
-                        textAlign: TextAlign.start,
                         style: TextStyle(
                           color: Color(0xFF1E329D),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
                           decoration: TextDecoration.underline,
                         ),
                       ),
                     ),
+
                     const SizedBox(height: 26),
 
-                    // 🧩 Botón dentro de SafeArea
                     SafeArea(
                       top: false,
                       child: Padding(
@@ -94,15 +83,10 @@ Future<bool> showTermsModal(BuildContext context) async {
                                       'true',
                                     );
                                     accepted = true;
-                                    if (context.mounted) Navigator.pop(context);
+                                    Navigator.pop(context);
                                   },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF1E329D),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              elevation: 3,
-                              shadowColor: Colors.black26,
                             ),
                             child: loading
                                 ? const CircularProgressIndicator(
@@ -111,9 +95,8 @@ Future<bool> showTermsModal(BuildContext context) async {
                                 : const Text(
                                     'Aceptar y continuar',
                                     style: TextStyle(
-                                      fontSize: 17,
-                                      fontWeight: FontWeight.w600,
                                       color: Colors.white,
+                                      fontSize: 16,
                                     ),
                                   ),
                           ),

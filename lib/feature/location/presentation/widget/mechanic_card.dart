@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class MechanicCard extends StatelessWidget {
   final Map<String, dynamic> mechanic;
   final String distanceText;
   final VoidCallback onRoutePressed;
+  final VoidCallback onRequestPressed;
 
   const MechanicCard({
     super.key,
     required this.mechanic,
     required this.distanceText,
     required this.onRoutePressed,
+    required this.onRequestPressed,
   });
 
   @override
@@ -24,7 +27,6 @@ class MechanicCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 🔹 Icono a la izquierda
             const CircleAvatar(
               backgroundColor: Colors.blue,
               radius: 20,
@@ -32,12 +34,10 @@ class MechanicCard extends StatelessWidget {
             ),
             const SizedBox(width: 10),
 
-            // 🔹 Contenido expandible
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 🔹 Nombre y distancia con spaceBetween
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -48,16 +48,13 @@ class MechanicCard extends StatelessWidget {
                             fontWeight: FontWeight.w600,
                             fontSize: 14,
                           ),
-                          overflow: TextOverflow
-                              .ellipsis, // por si el nombre es largo
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       const SizedBox(width: 8),
                       Container(
                         decoration: BoxDecoration(
-                          color: const Color(
-                            0xFFEDF2F9,
-                          ),
+                          color: const Color(0xFFEDF2F9),
                           borderRadius: BorderRadius.circular(5),
                         ),
                         padding: const EdgeInsets.symmetric(
@@ -78,11 +75,16 @@ class MechanicCard extends StatelessWidget {
 
                   const SizedBox(height: 8),
 
-                  // 🔹 Botones
                   Row(
                     children: [
+                      // 🔵 BOTÓN INFORMACIÓN (Corregido)
                       ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          context.push(
+                            "/mechanic-info",
+                            extra: mechanic['uuid'],
+                          );
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF235EE8),
                           shape: RoundedRectangleBorder(
@@ -98,7 +100,10 @@ class MechanicCard extends StatelessWidget {
                           style: TextStyle(color: Colors.white, fontSize: 12),
                         ),
                       ),
+
                       const SizedBox(width: 10),
+
+                      // 🧭 Ver ruta
                       ElevatedButton(
                         onPressed: onRoutePressed,
                         style: ElevatedButton.styleFrom(
@@ -117,6 +122,8 @@ class MechanicCard extends StatelessWidget {
                           style: TextStyle(color: Colors.black, fontSize: 12),
                         ),
                       ),
+
+                      const SizedBox(width: 10),
                     ],
                   ),
                 ],

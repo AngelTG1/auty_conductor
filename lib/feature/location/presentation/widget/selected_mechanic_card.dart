@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class SelectedMechanicCard extends StatelessWidget {
   final Map<String, dynamic> mechanic;
@@ -20,7 +21,11 @@ class SelectedMechanicCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         boxShadow: [
-          BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, -2))
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 6,
+            offset: Offset(0, -2),
+          ),
         ],
       ),
       child: Column(
@@ -31,15 +36,15 @@ class SelectedMechanicCard extends StatelessWidget {
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
           ),
           const SizedBox(height: 8),
-          Text(
-            mechanic['address'] ?? '',
-            style: const TextStyle(color: Colors.black54),
-          ),
-          const SizedBox(height: 10),
+
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.directions_car, color: Colors.redAccent, size: 20),
+              const Icon(
+                Icons.directions_car,
+                color: Colors.redAccent,
+                size: 20,
+              ),
               const SizedBox(width: 6),
               Text(
                 "${mechanic['durationText']} · ${mechanic['distanceText']}",
@@ -51,10 +56,33 @@ class SelectedMechanicCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 18),
+
+          // ✔ NUEVO BOTÓN SOLICITAR
+          ElevatedButton.icon(
+            onPressed: () {
+              context.push(
+                "/express-mechanic",
+                extra: {"mechanicUuid": mechanic["uuid"]},
+              );
+            },
+            icon: const Icon(Icons.build, color: Colors.white),
+            label: const Text("Solicitar mecánico"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
           ElevatedButton.icon(
             onPressed: onCancel,
             icon: const Icon(Icons.cancel_outlined),
-            label: const Text("Cancelar mecánico seleccionado"),
+            label: const Text("Cancelar selección"),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.grey[300],
               foregroundColor: Colors.black87,
@@ -64,8 +92,6 @@ class SelectedMechanicCard extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 10),
-
         ],
       ),
     );
