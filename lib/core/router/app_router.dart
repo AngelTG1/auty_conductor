@@ -1,6 +1,8 @@
+import 'package:auty_conductor/feature/chat/presentation/pages/chat_page.dart';
 import 'package:auty_conductor/feature/location/presentation/pages/driver_tracking_mechanic_page.dart';
 import 'package:auty_conductor/feature/location/presentation/pages/mechanic_info_page.dart';
 import 'package:auty_conductor/feature/profile/presentation/pages/privacy_webview_page.dart';
+import 'package:auty_conductor/feature/request/presentation/pages/mechanic_tracking_page.dart';
 import 'package:go_router/go_router.dart';
 
 // 🔹 Pages principales
@@ -103,6 +105,30 @@ final GoRouter appRouter = GoRouter(
         return DriverTrackingMechanicPage(request: request);
       },
     ),
+
+    GoRoute(
+      path: "/tracking",
+      name: AppRoutes.tracking,
+      builder: (context, state) {
+        final data = state.extra as Map<String, dynamic>;
+        return MechanicTrackingPage(request: data);
+      },
+    ),
+
+    // 💬 CHAT
+    GoRoute(
+      path: "/chat",
+      name: "chatPage",
+      builder: (context, state) {
+        final data = state.extra as Map<String, dynamic>;
+
+        return ChatPage(
+          chatUuid: data["chatUuid"],
+          driverUuid: data["driverUuid"],
+          mechanicUuid: data["mechanicUuid"],
+        );
+      },
+    ),
   ],
 );
 
@@ -130,4 +156,7 @@ class AppRoutes {
   static const locationMap = '/location/map';
 
   static const privacyWeb = '/privacy-web';
+  static const tracking = "/tracking";
+
+  static const chat = "/chat";
 }

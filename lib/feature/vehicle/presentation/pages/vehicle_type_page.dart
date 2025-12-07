@@ -24,12 +24,6 @@ class _VehicleTypePageState extends State<VehicleTypePage> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F8F8),
-      appBar: AppBar(
-        title: const Text('Configura tu vehículo'),
-        foregroundColor: Colors.black,
-        backgroundColor: const Color(0xFFF8F8F8),
-        elevation: 0.5,
-      ),
       body: SafeArea(
         child: prov.loading
             ? const Center(child: CircularProgressIndicator())

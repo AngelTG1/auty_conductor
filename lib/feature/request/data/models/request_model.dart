@@ -11,6 +11,7 @@ class RequestModel extends RequestEntity {
     required super.lng,
     required super.vehicle,
     required super.status,
+    required super.chatUuid, // 👈 NUEVO
   });
 
   factory RequestModel.fromJson(Map<String, dynamic> json) {
@@ -24,6 +25,7 @@ class RequestModel extends RequestEntity {
       lng: (json['lng'] ?? 0).toDouble(),
       vehicle: json['vehicle'] ?? json['vehicle_json'] ?? {},
       status: json['status'],
+      chatUuid: json['chatUuid'], // 👈 NUEVO
     );
   }
 }

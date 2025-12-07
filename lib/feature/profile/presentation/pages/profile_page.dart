@@ -17,6 +17,7 @@ class _ProfilePageState extends State<ProfilePage> with SafeAsyncState {
   bool loading = true;
   String? userName;
   String? userEmail;
+  String? profileImageUrl;
 
   @override
   void initState() {
@@ -31,24 +32,26 @@ class _ProfilePageState extends State<ProfilePage> with SafeAsyncState {
   }
 
   Future<void> _loadProfile() async {
-    if (!loading) return;
-    await Future.delayed(const Duration(seconds: 2));
+    await Future.delayed(const Duration(milliseconds: 300));
 
     final name = await SecureStorageService.read('userName');
     final email = await SecureStorageService.read('userEmail');
+    final img = await SecureStorageService.read('profileImage');
 
     if (!mounted) return;
+
     safeSetState(() {
       userName = name ?? 'Conductor';
       userEmail = email ?? 'Correo no disponible';
+      profileImageUrl = img;
       loading = false;
     });
   }
 
   Future<void> _confirmLogout() async {
     final width = MediaQuery.of(context).size.width;
-    final double dialogFont = width * 0.030; // 14–18
-    final double buttonFont = width * 0.030; // 14–18
+    final double dialogFont = width * 0.030;
+    final double buttonFont = width * 0.030;
 
     final shouldLogout = await showDialog<bool>(
       context: context,
@@ -100,16 +103,15 @@ class _ProfilePageState extends State<ProfilePage> with SafeAsyncState {
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
 
-    // 🔹 valores responsivos
-    final double titleFont = width * 0.045; // ~20
-    final double avatarRadius = width * 0.060; // 18–24
-    final double avatarIcon = width * 0.056; // 18–22
+    final double titleFont = width * 0.045;
+    final double avatarRadius = width * 0.060;
+    final double avatarIcon = width * 0.056;
     final double nameFont = width * 0.035;
     final double emailFont = width * 0.028;
     final double cardPadding = width * 0.045;
     final double spacing = width * 0.035;
-    final double optionIcon = width * 0.065; // 22–28
-    final double optionFont = width * 0.04; // 14–16
+    final double optionIcon = width * 0.065;
+    final double optionFont = width * 0.04;
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFFFFF),
@@ -131,7 +133,9 @@ class _ProfilePageState extends State<ProfilePage> with SafeAsyncState {
                     ),
                     SizedBox(height: spacing * 1.5),
 
-                    // 🔹 CARD superior del usuario
+                    // --------------------------------------------------------------
+                    // 🔵 FOTO DEL USUARIO (sin modificar UI)
+                    // --------------------------------------------------------------
                     Container(
                       padding: EdgeInsets.all(cardPadding),
                       decoration: BoxDecoration(
@@ -150,13 +154,26 @@ class _ProfilePageState extends State<ProfilePage> with SafeAsyncState {
                           CircleAvatar(
                             radius: avatarRadius,
                             backgroundColor: const Color(0xFF235EE8),
-                            child: Icon(
-                              Icons.person,
-                              color: Colors.white,
-                              size: avatarIcon,
-                            ),
+
+                            backgroundImage:
+                                (profileImageUrl != null &&
+                                    profileImageUrl!.isNotEmpty)
+                                ? NetworkImage(profileImageUrl!)
+                                : null,
+
+                            child:
+                                (profileImageUrl == null ||
+                                    profileImageUrl!.isEmpty)
+                                ? Icon(
+                                    Icons.person,
+                                    color: Colors.white,
+                                    size: avatarIcon,
+                                  )
+                                : null,
                           ),
+
                           SizedBox(width: spacing),
+
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -184,7 +201,9 @@ class _ProfilePageState extends State<ProfilePage> with SafeAsyncState {
                       ),
                     ),
 
-                    // 🔹 Botón de Cerrar sesión
+                    // --------------------------------------------------------------
+                    // 🔴 CERRAR SESIÓN
+                    // --------------------------------------------------------------
                     GestureDetector(
                       onTap: _confirmLogout,
                       child: Container(
@@ -224,7 +243,9 @@ class _ProfilePageState extends State<ProfilePage> with SafeAsyncState {
 
                     SizedBox(height: spacing * 2),
 
-                    // 🔹 Lista de opciones
+                    // --------------------------------------------------------------
+                    // 🔹 Opciones
+                    // --------------------------------------------------------------
                     _buildOptionCard(
                       Icons.person_outline_rounded,
                       "Perfil",
@@ -237,7 +258,10 @@ class _ProfilePageState extends State<ProfilePage> with SafeAsyncState {
                           MaterialPageRoute(
                             builder: (_) => const DataPerfilPage(),
                           ),
-                        );
+                        ).then((_) {
+                          // recargar al volver
+                          _loadProfile();
+                        });
                       },
                     ),
                     SizedBox(height: spacing),

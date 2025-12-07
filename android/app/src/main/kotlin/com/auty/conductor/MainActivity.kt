@@ -1,4 +1,4 @@
-package com.example.auty_conductor
+package com.auty.conductor
 
 import io.flutter.embedding.android.FlutterActivity
 

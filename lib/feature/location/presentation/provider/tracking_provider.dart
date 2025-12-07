@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_database/firebase_database.dart';
+
 import '../../../../core/http/api_constants.dart';
 import '../../../../core/services/secure_storage_service.dart';
 
@@ -19,10 +20,11 @@ class TrackingProvider extends ChangeNotifier {
   bool get isTracking => _isTracking;
   Map<String, dynamic> get drivers => _drivers;
 
-  /// 🔹 Escucha ubicaciones de otros conductores
+  /// 🔹 Escuchar ubicación de otros drivers desde Firebase
   void listenToDrivers() {
     _dbRef.onValue.listen((event) {
       final data = event.snapshot.value;
+
       if (data != null && data is Map) {
         _drivers = Map<String, dynamic>.from(data);
         notifyListeners();
@@ -30,14 +32,15 @@ class TrackingProvider extends ChangeNotifier {
     });
   }
 
-  /// 🔹 Inicia el rastreo del usuario
+  /// 🔵 Iniciar tracking cada 5 segundos
   Future<void> startTracking() async {
     final hasPermission = await _handlePermissions();
     if (!hasPermission) return;
 
     _isTracking = true;
-    listenToDrivers();
     notifyListeners();
+
+    listenToDrivers();
 
     _timer = Timer.periodic(const Duration(seconds: 5), (_) async {
       await _updateLocation();
@@ -50,6 +53,7 @@ class TrackingProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 🔐 Permisos
   Future<bool> _handlePermissions() async {
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
@@ -64,39 +68,50 @@ class TrackingProvider extends ChangeNotifier {
     }
 
     if (permission == LocationPermission.deniedForever) return false;
+
     return true;
   }
 
-  /// 🔹 Envía la ubicación actual al backend + Firebase
+  /// 🟢 ENVÍA UBICACIÓN A GATEWAY + Firebase
   Future<void> _updateLocation() async {
     try {
       _currentPosition = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
 
-      final driverUuid = await SecureStorageService.read('driverUuid');
+      final driverUuid = await SecureStorageService.read("driverUuid");
+
       if (driverUuid == null || driverUuid.isEmpty) return;
 
-      final url = Uri.parse('${ApiConstants.location}/save');
+      // ⛳ URL CORRECTA (via GATEWAY)
+      final url = Uri.parse(ApiConstants.location);
+
+      final token = await SecureStorageService.read("token");
+
       await http.post(
         url,
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
         body: jsonEncode({
-          'driverUuid': driverUuid,
-          'latitude': _currentPosition!.latitude,
-          'longitude': _currentPosition!.longitude,
+          "driverUuid": driverUuid,
+          "latitude": _currentPosition!.latitude,
+          "longitude": _currentPosition!.longitude,
         }),
       );
 
+      // 🔵 Guardar también en Firebase (opcional)
       await _dbRef.child(driverUuid).set({
-        'latitude': _currentPosition!.latitude,
-        'longitude': _currentPosition!.longitude,
+        "lat": _currentPosition!.latitude,
+        "lng": _currentPosition!.longitude,
+        "timestamp": DateTime.now().toIso8601String(),
       });
 
-      debugPrint('📍 Ubicación actualizada y sincronizada.');
+      debugPrint("📍 Ubicación enviada correctamente.");
       notifyListeners();
     } catch (e) {
-      debugPrint('❌ Error actualizando ubicación: $e');
+      debugPrint("❌ Error enviando ubicación: $e");
     }
   }
 }

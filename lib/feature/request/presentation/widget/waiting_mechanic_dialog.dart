@@ -16,7 +16,7 @@ class WaitingMechanicDialog extends StatefulWidget {
 }
 
 class WaitingMechanicDialogState extends State<WaitingMechanicDialog> {
-  int seconds = 15;
+  int seconds = 30;
   Timer? _timer;
 
   String statusMessage = "Esperando que el mecánico acepte...";

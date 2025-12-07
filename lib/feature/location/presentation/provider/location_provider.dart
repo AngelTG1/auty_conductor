@@ -7,9 +7,10 @@ import '../../domain/entities/location_entity.dart';
 class LocationProvider extends ChangeNotifier {
   final Dio _dio = Dio();
 
-  // URLs centralizadas
+  // ====== URLs CORRECTAS (VÍA GATEWAY) ======
   final String mechanicsUrl = '${ApiConstants.location}/mechanics/all';
   final String distanceUrl = '${ApiConstants.location}/distance/calc';
+  final String workshopUrl = '${ApiConstants.location}/workshops';
 
   List<LocationEntity> _mechanics = [];
   bool _loading = false;
@@ -17,6 +18,9 @@ class LocationProvider extends ChangeNotifier {
   List<LocationEntity> get mechanics => _mechanics;
   bool get loading => _loading;
 
+  // ============================================================
+  // 🔵 OBTENER MECÁNICOS CERCANOS
+  // ============================================================
   Future<void> fetchNearbyMechanics({
     required double userLat,
     required double userLng,
@@ -27,6 +31,9 @@ class LocationProvider extends ChangeNotifier {
 
     try {
       final response = await _dio.get(mechanicsUrl);
+
+      // Firebase retorna:
+      // mechanics: { mechanicUuid: { lat, lng, workshopName, ... } }
       final data = response.data as Map<String, dynamic>;
       final List<LocationEntity> nearby = [];
 
@@ -52,17 +59,21 @@ class LocationProvider extends ChangeNotifier {
       });
 
       nearby.sort((a, b) => a.distance!.compareTo(b.distance!));
+
       _mechanics = nearby;
     } catch (e) {
-      debugPrint("❌ Error cargando talleres: $e");
+      debugPrint("❌ Error cargando mecánicos: $e");
+      _mechanics = [];
     } finally {
       _loading = false;
       notifyListeners();
     }
   }
 
-  /// 🔹 Calcular ruta/duración usando backend
-  Future<Map<String, dynamic>?> calculateDistance(
+  // ============================================================
+  // 🟣 CALCULAR DISTANCIA VÍA BACKEND (Nunca retorna null)
+  // ============================================================
+  Future<Map<String, dynamic>> calculateDistance(
     String origin,
     String destination,
   ) async {
@@ -71,21 +82,24 @@ class LocationProvider extends ChangeNotifier {
         distanceUrl,
         queryParameters: {'origin': origin, 'destination': destination},
       );
+
       return response.data as Map<String, dynamic>;
     } catch (e) {
       debugPrint('❌ Error calculando distancia: $e');
-      return null;
+      return {}; // ← NO retorna null para evitar errores
     }
   }
 
-  /// 📏 Calcular distancia localmente (en km)
+  // ============================================================
+  // 🔢 DISTANCIA LOCAL (RESPALDO)
+  // ============================================================
   double _calculateDistance(
     double lat1,
     double lon1,
     double lat2,
     double lon2,
   ) {
-    const double r = 6371; // radio de la tierra en km
+    const double r = 6371; // km
     final dLat = (lat2 - lat1) * (pi / 180);
     final dLon = (lon2 - lon1) * (pi / 180);
     final a =
@@ -94,21 +108,33 @@ class LocationProvider extends ChangeNotifier {
             cos(lat2 * (pi / 180)) *
             sin(dLon / 2) *
             sin(dLon / 2);
+
     final c = 2 * atan2(sqrt(a), sqrt(1 - a));
     return r * c;
   }
 
+  // ============================================================
+  // 🟠 WORKSHOP SELECCIONADO
+  // ============================================================
   Map<String, dynamic>? selectedWorkshop;
 
+  // ============================================================
+  // 🔵 OBTENER INFO COMPLETA DE UN MECÁNICO / TALLER
+  // ============================================================
   Future<void> loadWorkshopInfo(String mechanicUuid) async {
     try {
-      final url = '${ApiConstants.location}/workshops/$mechanicUuid';
-      final response = await _dio.get(url);
+      final response = await _dio.get('$workshopUrl/$mechanicUuid');
 
-      selectedWorkshop = response.data;
-      notifyListeners();
+      if (response.statusCode == 200) {
+        selectedWorkshop = response.data as Map<String, dynamic>;
+      } else {
+        selectedWorkshop = null;
+      }
     } catch (e) {
-      debugPrint("❌ Error cargando info del mecánico: $e");
+      debugPrint("❌ Error cargando info del taller: $e");
+      selectedWorkshop = null;
     }
+
+    notifyListeners();
   }
 }

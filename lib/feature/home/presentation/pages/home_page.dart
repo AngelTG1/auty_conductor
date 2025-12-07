@@ -10,7 +10,6 @@ import '../../../../core/services/secure_storage_service.dart';
 
 // Widgets
 import '../widgets/car_card.dart';
-import '../widgets/home_menu.dart';
 import '../widgets/history_empty.dart';
 import '../widgets/search_mechanic_button.dart';
 import '../widgets/home_header.dart';
@@ -28,6 +27,7 @@ class _HomePageState extends State<HomePage> {
   String? userEmail;
   String? userPhone;
   String? userLicense;
+  String? profileImageUrl;
   bool loading = true;
 
   @override
@@ -36,10 +36,16 @@ class _HomePageState extends State<HomePage> {
     _loadData();
   }
 
-  Future<void> _loadData() async {
-    if (!loading) return;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+  }
 
-    await Future.delayed(const Duration(seconds: 2));
+  Future<void> _loadData() async {
+    setState(() => loading = true);
+
+    await Future.delayed(const Duration(milliseconds: 400));
+
     final driverUuid = await SecureStorageService.read('driverUuid');
 
     userName = await SecureStorageService.read('userName') ?? 'Conductor';
@@ -47,6 +53,7 @@ class _HomePageState extends State<HomePage> {
     userPhone = await SecureStorageService.read('userPhone') ?? 'Teléfono';
     userLicense =
         await SecureStorageService.read('licenseNumber') ?? 'Licencia';
+    profileImageUrl = await SecureStorageService.read('profileImage');
 
     if (driverUuid == null || driverUuid.isEmpty) {
       if (!mounted) return;
@@ -55,70 +62,27 @@ class _HomePageState extends State<HomePage> {
     }
 
     final provider = context.read<VehicleProvider>();
-    final vehicle = await provider.loadMyVehicle(driverUuid);
+    myVehicle = await provider.loadMyVehicle(driverUuid);
 
     if (!mounted) return;
-    setState(() {
-      myVehicle = vehicle;
-      loading = false;
-    });
+
+    setState(() => loading = false);
   }
 
   Future<void> _confirmLogout() async {
-    final width = MediaQuery.of(context).size.width;
-
-    // 🔹 Valores responsivos calculados por ancho
-    final double titleFont = width * 0.045; // ~18–20px
-    final double contentFont = width * 0.038; // ~14–16px
-    final double buttonFont = width * 0.033; // ~14–15px
-    final double paddingBtn = width * 0.03;
-    final double dialogRadius = width * 0.04; // ~12–18px
-
     final shouldLogout = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(dialogRadius),
-        ),
-
-        title: Text(
-          '¿Cerrar sesión?',
-          style: TextStyle(fontSize: titleFont, fontWeight: FontWeight.bold),
-        ),
-
-        content: Text(
-          '¿Estás seguro de que deseas cerrar sesión?',
-          style: TextStyle(fontSize: contentFont, height: 1.3),
-        ),
-
-        actionsPadding: EdgeInsets.symmetric(
-          horizontal: width * 0.03,
-          vertical: width * 0.02,
-        ),
-
+        title: const Text("¿Cerrar sesión?"),
+        content: const Text("¿Estás seguro que deseas cerrar sesión?"),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Padding(
-              padding: EdgeInsets.all(paddingBtn),
-              child: Text(
-                'Cancelar',
-                style: TextStyle(color: Colors.grey, fontSize: buttonFont),
-              ),
-            ),
+            child: const Text("Cancelar"),
           ),
-
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF235EE8),
-              foregroundColor: Colors.white,
-              padding: EdgeInsets.all(paddingBtn),
-            ),
-            child: Text(
-              'Cerrar sesión',
-              style: TextStyle(fontSize: buttonFont),
-            ),
+            child: const Text("Cerrar sesión"),
           ),
         ],
       ),
@@ -133,55 +97,53 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    // 🔹 Si está cargando → muestra skeleton con Scaffold propio
-    if (loading) {
-      return const _HomeSkeleton();
-    }
-
     return Scaffold(
       backgroundColor: const Color(0xFFF8F8F8),
       body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: _loadData,
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // ⭐ Header responsivo
-                HomeHeader(
-                  userName: userName ?? '',
-                  userEmail: userEmail ?? '',
-                  onLogout: _confirmLogout,
-                  onNotifications: () {
-                    debugPrint("📦 Notificaciones presionado");
-                  },
+        child: loading
+            ? const _HomeSkeleton() // ⭐ se muestra de inmediato
+            : RefreshIndicator(
+                onRefresh: _loadData,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 2,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      HomeHeader(
+                        userName: userName ?? '',
+                        userEmail: userEmail ?? '',
+
+                        onLogout: _confirmLogout,
+                        onNotifications: () {},
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      if (myVehicle != null)
+                        CarCard(vehicle: myVehicle!, licenseNumber: userLicense)
+                      else
+                        _noVehicleCard(),
+
+                      const SizedBox(height: 10),
+                      
+
+                      const SizedBox(height: 10),
+                      const SearchMechanicButton(),
+
+                      const HistoryEmpty(),
+                      const SizedBox(height: 20),
+                    ],
+                  ),
                 ),
-
-                const SizedBox(height: 20),
-
-                // 🔹 Card de vehículo o mensaje
-                if (myVehicle != null)
-                  CarCard(vehicle: myVehicle!, licenseNumber: userLicense)
-                else
-                  _noVehicleCard(),
-
-                const SizedBox(height: 10),
-                const HomeMenu(),
-                const SizedBox(height: 10),
-                const SearchMechanicButton(),
-                const HistoryEmpty(),
-                const SizedBox(height: 20),
-              ],
-            ),
-          ),
-        ),
+              ),
       ),
     );
   }
 
-  // 🔹 Widget para cuando no hay vehículo
   Widget _noVehicleCard() {
     return Container(
       width: double.infinity,
@@ -220,91 +182,74 @@ class _HomeSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8F8F8),
-      body: SafeArea(
-        child: Shimmer.fromColors(
-          baseColor: Colors.grey.shade300,
-          highlightColor: Colors.grey.shade100,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      child: Shimmer.fromColors(
+        baseColor: Colors.grey.shade300,
+        highlightColor: Colors.grey.shade100,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header skeleton
+            Row(
               children: [
-                Row(
+                Container(
+                  width: 45,
+                  height: 45,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(width: 100, height: 14, color: Colors.white),
-                        const SizedBox(height: 6),
-                        Container(width: 140, height: 12, color: Colors.white),
-                      ],
-                    ),
+                    Container(width: 120, height: 14, color: Colors.white),
+                    const SizedBox(height: 6),
+                    Container(width: 160, height: 12, color: Colors.white),
                   ],
-                ),
-
-                const SizedBox(height: 24),
-
-                Container(
-                  width: double.infinity,
-                  height: 140,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: List.generate(
-                    4,
-                    (index) => Container(
-                      width: 75,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                Container(
-                  width: double.infinity,
-                  height: 55,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                Container(
-                  width: double.infinity,
-                  height: 150,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
                 ),
               ],
             ),
-          ),
+
+            const SizedBox(height: 24),
+
+            // CarCard skeleton
+            Container(
+              width: double.infinity,
+              height: 140,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),       
+
+            const SizedBox(height: 20),
+
+            // Search button skeleton
+            Container(
+              width: double.infinity,
+              height: 55,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // History skeleton
+            Container(
+              width: double.infinity,
+              height: 150,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
+          ],
         ),
       ),
     );
