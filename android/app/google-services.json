@@ -1,10 +1,40 @@
 {
   "project_info": {
     "project_number": "405622289601",
+    "firebase_url": "https://auty-42336-default-rtdb.firebaseio.com",
     "project_id": "auty-42336",
     "storage_bucket": "auty-42336.firebasestorage.app"
   },
   "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:405622289601:android:530847928293262c6b1040",
+        "android_client_info": {
+          "package_name": "com.auty.conductor"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "405622289601-dllv1cnvcvljt6bf1f38c204bevbg67f.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDmReH_YIiJWFVeffoKLWmruFTS9DkCOCo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "405622289601-dllv1cnvcvljt6bf1f38c204bevbg67f.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
     {
       "client_info": {
         "mobilesdk_app_id": "1:405622289601:android:59966d4a7e48ba5e6b1040",
@@ -21,6 +51,35 @@
             "certificate_hash": "a74126cac87e5b64e8c9b93ca57aa8638932ffa0"
           }
         },
+        {
+          "client_id": "405622289601-dllv1cnvcvljt6bf1f38c204bevbg67f.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDmReH_YIiJWFVeffoKLWmruFTS9DkCOCo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "405622289601-dllv1cnvcvljt6bf1f38c204bevbg67f.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:405622289601:android:d24bdf508a7cb6786b1040",
+        "android_client_info": {
+          "package_name": "com.example.auty_mecanico"
+        }
+      },
+      "oauth_client": [
         {
           "client_id": "405622289601-dllv1cnvcvljt6bf1f38c204bevbg67f.apps.googleusercontent.com",
           "client_type": 3

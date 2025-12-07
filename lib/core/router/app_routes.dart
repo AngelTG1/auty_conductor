@@ -3,13 +3,21 @@ class AppRoutes {
   static const login = '/login';
   static const register = '/register';
   static const selectRole = '/select-role';
-  static const terms = '/terms';
+
   static const vehicleType = '/vehicle/type';
   static const vehicleBrand = '/vehicle/brand';
   static const vehicleColor = '/vehicle/color';
   static const vehicleSummary = '/vehicle/summary';
-  static const home = '/home';
 
-    // 🌍 Nueva ruta para el mapa
+  static const home = '/home';
+  static const expressMechanic = '/mechanic/express';
+
   static const locationMap = '/location/map';
+  static const privacyWeb = '/privacy-web';
+
+  static const driverTrackingMechanic = '/tracking/mechanic';
+  static const tracking = "/tracking";
+
+  // 💬 NUEVO
+  static const chat = "/chat";
 }

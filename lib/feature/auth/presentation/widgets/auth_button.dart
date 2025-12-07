@@ -8,27 +8,45 @@ class AuthButton extends StatelessWidget {
   const AuthButton({
     super.key,
     required this.text,
-    required this.onPressed,
+    this.onPressed,
     this.loading = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    const buttonColor = Color(0xFF235FE8);
-    return ElevatedButton(
-      onPressed: loading ? null : onPressed,
-      style: ElevatedButton.styleFrom(
-        minimumSize: const Size(double.infinity, 60),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        backgroundColor: buttonColor,
-        elevation: 5,
+    final width = MediaQuery.of(context).size.width;
+    final height = MediaQuery.of(context).size.height;
+
+    return SizedBox(
+      width: double.infinity,
+      height: height * 0.065, // responsivo
+      child: ElevatedButton(
+        onPressed: loading ? null : onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF235FE8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(width * 0.03),
+          ),
+          elevation: 5,
+        ),
+        child: loading
+            ? const SizedBox(
+                width: 26,
+                height: 26,
+                child: CircularProgressIndicator(
+                  strokeWidth: 3,
+                  color: Colors.white,
+                ),
+              )
+            : Text(
+                text,
+                style: TextStyle(
+                  fontSize: width * 0.045,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
       ),
-      child: loading
-          ? const CircularProgressIndicator(color: Colors.white)
-          : Text(
-              text,
-              style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.w600),
-            ),
     );
   }
 }

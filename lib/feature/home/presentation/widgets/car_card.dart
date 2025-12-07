@@ -13,24 +13,31 @@ class CarCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+
+    // --- Escalas responsivas ---
+    final double padding = width * 0.04; // ~16 px
+    final double badgeFont = width * 0.032; // ~12px
+    final double brandFont = width * 0.032; // ~14px
+    final double plateFont = width * 0.065; // ~30px
+    final double carSize = width * 0.27; // imagen auto ~30% del ancho
+    final double iconSize = width * 0.20;
+
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        // 🔹 Contenedor principal con gradiente de abajo hacia arriba
+        // 🔹 Contenedor principal
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.only(
-            left: 16,
-            right: 16,
-            top: 30,
-            bottom: 16,
+          padding: EdgeInsets.only(
+            left: padding,
+            right: padding,
+            top: padding * 2,
+            bottom: padding,
           ),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [
-                Color(0xFF171998), // color inferior
-                Color(0xFF272BFE), // color superior
-              ],
+              colors: [Color(0xFF171998), Color(0xFF272BFE)],
               begin: Alignment.bottomCenter,
               end: Alignment.topCenter,
             ),
@@ -44,21 +51,21 @@ class CarCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 37), // espacio para el badge
+                    SizedBox(height: padding * 2.2), // espacio para badge
                     Text(
                       "${vehicle.brand} (${vehicle.colorName})",
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
-                        fontSize: 14,
+                        fontSize: brandFont,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    SizedBox(height: padding * 0.3),
                     Text(
                       licenseNumber ?? 'Licencia no disponible',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
-                        fontSize: 30,
+                        fontSize: plateFont,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -66,23 +73,23 @@ class CarCard extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(width: 8),
+              SizedBox(width: padding * 0.5),
 
-              // 🔹 Imagen o ícono
+              // 🔹 Imagen o ícono responsivo
               if (vehicle.imageUrl.isNotEmpty)
                 Image.network(
                   vehicle.imageUrl,
-                  height: 90,
-                  width: 135,
+                  height: carSize,
+                  width: carSize + width * 0.1,
                   fit: BoxFit.contain,
-                  errorBuilder: (_, __, ___) => const Icon(
+                  errorBuilder: (_, __, ___) => Icon(
                     Icons.directions_car,
                     color: Colors.white,
-                    size: 80,
+                    size: iconSize,
                   ),
                 )
               else
-                const Icon(Icons.directions_car, color: Colors.white, size: 80),
+                Icon(Icons.directions_car, color: Colors.white, size: iconSize),
             ],
           ),
         ),
@@ -90,9 +97,12 @@ class CarCard extends StatelessWidget {
         // 🔹 Badge “Auto actual”
         Positioned(
           left: 0,
-          top: 20,
+          top: padding * 1.2,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            padding: EdgeInsets.symmetric(
+              horizontal: padding * 0.8,
+              vertical: padding * 0.3,
+            ),
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.only(
@@ -100,12 +110,12 @@ class CarCard extends StatelessWidget {
                 bottomRight: Radius.circular(50),
               ),
             ),
-            child: const Text(
+            child: Text(
               "Auto actual",
               style: TextStyle(
                 color: Colors.black,
-                fontWeight: FontWeight.normal,
-                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                fontSize: badgeFont,
               ),
             ),
           ),

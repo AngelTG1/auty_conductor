@@ -7,43 +7,38 @@ class SearchMechanicButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+
+    final double buttonFont = width * 0.033;
+    final double verticalPadding = width * 0.04;
+
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 0),
+        padding: EdgeInsets.symmetric(horizontal: width * 0.02),
         child: Row(
           children: [
             Expanded(
               child: ElevatedButton(
                 onPressed: () {
+                  // 🚀 Navegación directa SIN modal
                   context.push(AppRoutes.locationMap);
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF235EE8),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  padding: EdgeInsets.symmetric(vertical: verticalPadding),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(width * 0.03),
                   ),
                   elevation: 0,
                 ),
-                child: const Text(
+                child: Text(
                   'Buscar mecánicos cercanos',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontSize: buttonFont,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Container(
-              height: 54,
-              width: 54,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade200,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.location_on,
-                color: Color(0xFF235EE8),
-                size: 28,
               ),
             ),
           ],

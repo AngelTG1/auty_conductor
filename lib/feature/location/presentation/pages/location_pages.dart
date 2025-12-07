@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'dart:math' show min, max;
-import 'package:auty_conductor/core/http/api_constants.dart';
-import 'package:auty_conductor/core/services/analytics_service.dart';
-import 'package:auty_conductor/feature/location/domain/entities/location_entity.dart';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -11,13 +9,20 @@ import 'package:geocoding/geocoding.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
+import 'package:go_router/go_router.dart';
 
-// 🔹 Providers
+import 'package:auty_conductor/core/services/analytics_service.dart';
+import 'package:auty_conductor/feature/location/domain/entities/location_entity.dart';
+
+import '../../../../core/router/app_routes.dart';
 import '../provider/location_provider.dart';
 import '../provider/tracking_provider.dart';
 
-// 🔹 Widgets personalizados
-import '../widget/mechanic_card.dart';
+// ✅ Widgets separados
+import '../widget/top_info_bar.dart';
+import '../widget/buscar_button.dart';
+import '../widget/mechanic_list_sheet.dart';
+import '../widget/map_skeleton.dart';
 import '../widget/selected_mechanic_card.dart';
 
 class LocationPage extends StatefulWidget {
@@ -43,12 +48,18 @@ class _LocationPageState extends State<LocationPage> {
   void initState() {
     super.initState();
     _getCurrentLocation();
+
+    // 🔥 Iniciar tracking
     Future.microtask(() => context.read<TrackingProvider>().startTracking());
   }
 
-  /// 📍 Obtener ubicación actual
+  // ======================================================
+  // 📍 UBICACIÓN ACTUAL
+  // ======================================================
+
   Future<void> _getCurrentLocation() async {
     final status = await Permission.location.request();
+
     if (!status.isGranted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Permiso de ubicación denegado')),
@@ -74,12 +85,18 @@ class _LocationPageState extends State<LocationPage> {
         _currentPosition = LatLng(position.latitude, position.longitude);
         _currentAddress = direccion;
       });
+
+      // ⭐ Buscar mecánicos automáticamente
+      await _buscarMecanicosCercanos();
     } catch (e) {
       debugPrint("❌ Error obteniendo ubicación: $e");
     }
   }
 
-  /// 🔍 Buscar mecánicos cercanos con el provider
+  // ======================================================
+  // 🔍 BUSCAR MECÁNICOS
+  // ======================================================
+
   Future<void> _buscarMecanicosCercanos() async {
     if (_currentPosition == null) return;
 
@@ -111,7 +128,7 @@ class _LocationPageState extends State<LocationPage> {
             position: LatLng(m.lat, m.lng),
             infoWindow: InfoWindow(
               title: m.name,
-              snippet: '${_formatDistance(m.distance!)} de distancia',
+              snippet: "${_formatDistance(m.distance!)} de distancia",
             ),
             icon: BitmapDescriptor.defaultMarkerWithHue(
               BitmapDescriptor.hueRed,
@@ -121,75 +138,109 @@ class _LocationPageState extends State<LocationPage> {
       };
     });
 
+    // ⭐ Zoom automático
+    await _zoomToMarkers();
+
     await AnalyticsService.logBuscarMecanicos(encontrados: mecanicos.length);
 
     if (mecanicos.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('🚫 No hay mecánicos cercanos en un radio de 10 km.'),
+          content: Text("🚫 No hay mecánicos cercanos en un radio de 10 km."),
           backgroundColor: Colors.orangeAccent,
         ),
       );
     }
   }
 
-  /// 🗺️ Mostrar ruta usando flutter_polyline_points
+  // ======================================================
+  // 🔎 ZOOM A MARCADORES
+  // ======================================================
+
+  Future<void> _zoomToMarkers() async {
+    if (_markers.isEmpty || _mapController == null) return;
+
+    final positions = _markers.map((m) => m.position).toList();
+
+    double minLat = positions.map((p) => p.latitude).reduce(min);
+    double maxLat = positions.map((p) => p.latitude).reduce(max);
+    double minLng = positions.map((p) => p.longitude).reduce(min);
+    double maxLng = positions.map((p) => p.longitude).reduce(max);
+
+    final bounds = LatLngBounds(
+      southwest: LatLng(minLat, minLng),
+      northeast: LatLng(maxLat, maxLng),
+    );
+
+    await Future.delayed(const Duration(milliseconds: 300));
+
+    try {
+      await _mapController!.animateCamera(
+        CameraUpdate.newLatLngBounds(bounds, 90),
+      );
+    } catch (_) {
+      final center = LatLng((minLat + maxLat) / 2, (minLng + maxLng) / 2);
+      await _mapController!.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(target: center, zoom: 14),
+        ),
+      );
+    }
+  }
+
+  // ======================================================
+  // 🗺 MOSTRAR RUTA
+  // ======================================================
+
   Future<void> _mostrarRuta(LocationEntity mecanico) async {
     if (_currentPosition == null) return;
 
     final provider = context.read<LocationProvider>();
+
     final origin =
         "${_currentPosition!.latitude},${_currentPosition!.longitude}";
     final destination = "${mecanico.lat},${mecanico.lng}";
 
     try {
       final result = await provider.calculateDistance(origin, destination);
-      final duration = result?['durationText'] ?? '';
-      final distance = result?['distanceText'] ?? '';
+      final duration = result?['durationText'] ?? "";
+      final distance = result?['distanceText'] ?? "";
 
       final directionsUrl =
           "https://maps.googleapis.com/maps/api/directions/json?origin=$origin&destination=$destination&mode=driving&key=$googleApiKey";
 
-      final directionsResponse = await http.get(Uri.parse(directionsUrl));
-      final data = jsonDecode(directionsResponse.body);
-
-      if (data["routes"].isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No se encontró una ruta.')),
-        );
-        return;
-      }
+      final response = await http.get(Uri.parse(directionsUrl));
+      final data = jsonDecode(response.body);
 
       final points = data["routes"][0]["overview_polyline"]["points"];
-      final decodedPoints = PolylinePoints.decodePolyline(points);
-      final polylineCoords = decodedPoints
+      final decoded = PolylinePoints.decodePolyline(points);
+      final polyCoords = decoded
           .map((p) => LatLng(p.latitude, p.longitude))
           .toList();
 
       setState(() {
         _selectedMechanic = {
-          'uuid': mecanico.uuid,
-          'name': mecanico.name,
-          'lat': mecanico.lat,
-          'lng': mecanico.lng,
-          'distanceText': distance,
-          'durationText': duration,
+          "uuid": mecanico.uuid,
+          "name": mecanico.name,
+          "lat": mecanico.lat,
+          "lng": mecanico.lng,
+          "distanceText": distance,
+          "durationText": duration,
         };
 
         _polylines = {
           Polyline(
-            polylineId: const PolylineId('ruta'),
+            polylineId: const PolylineId("ruta"),
             color: Colors.blue,
-            width: 10,
-            points: polylineCoords,
+            width: 7,
+            points: polyCoords,
           ),
         };
 
         _markers = {
           Marker(
-            markerId: const MarkerId('mi_ubicacion'),
+            markerId: const MarkerId("yo"),
             position: _currentPosition!,
-            infoWindow: const InfoWindow(title: 'Tú estás aquí'),
             icon: BitmapDescriptor.defaultMarkerWithHue(
               BitmapDescriptor.hueAzure,
             ),
@@ -197,7 +248,6 @@ class _LocationPageState extends State<LocationPage> {
           Marker(
             markerId: MarkerId(mecanico.uuid),
             position: LatLng(mecanico.lat, mecanico.lng),
-            infoWindow: InfoWindow(title: mecanico.name),
             icon: BitmapDescriptor.defaultMarkerWithHue(
               BitmapDescriptor.hueRed,
             ),
@@ -206,31 +256,19 @@ class _LocationPageState extends State<LocationPage> {
       });
 
       await AnalyticsService.logSeleccionarMecanico(mecanico.name);
-
-      _mapController?.animateCamera(
-        CameraUpdate.newLatLngBounds(
-          LatLngBounds(
-            southwest: LatLng(
-              min(_currentPosition!.latitude, mecanico.lat),
-              min(_currentPosition!.longitude, mecanico.lng),
-            ),
-            northeast: LatLng(
-              max(_currentPosition!.latitude, mecanico.lat),
-              max(_currentPosition!.longitude, mecanico.lng),
-            ),
-          ),
-          80,
-        ),
-      );
     } catch (e) {
-      debugPrint('❌ Error mostrando ruta: $e');
+      debugPrint("❌ Error mostrando ruta: $e");
     }
   }
 
   String _formatDistance(double km) {
-    if (km < 1) return '${(km * 1000).round()} m';
-    return '${km.toStringAsFixed(1)} km';
+    if (km < 1) return "${(km * 1000).round()} m";
+    return "${km.toStringAsFixed(1)} km";
   }
+
+  // ======================================================
+  // UI
+  // ======================================================
 
   @override
   Widget build(BuildContext context) {
@@ -245,7 +283,7 @@ class _LocationPageState extends State<LocationPage> {
           children: [
             Positioned.fill(
               child: _currentPosition == null
-                  ? const Center(child: CircularProgressIndicator())
+                  ? const MapSkeleton()
                   : GoogleMap(
                       initialCameraPosition: CameraPosition(
                         target: _currentPosition!,
@@ -259,233 +297,76 @@ class _LocationPageState extends State<LocationPage> {
                     ),
             ),
 
-            // 🔹 Caja superior
-            Positioned(top: 20, left: 20, right: 20, child: _buildTopInfo()),
+            Positioned(
+              top: 20,
+              left: 20,
+              right: 20,
+              child: TopInfoBar(
+                address: _currentAddress,
+                selectedName: _selectedMechanic?['name'],
+              ),
+            ),
 
-            // 🔹 Botón buscar mecánicos
             if (mecanicos.isEmpty && !_buscando && selected == null)
-              _buildBuscarButton(),
+              BuscarButton(onPressed: _buscarMecanicosCercanos),
 
             if (_buscando) const Center(child: CircularProgressIndicator()),
 
             if (mecanicos.isNotEmpty && selected == null)
-              _buildMechanicList(mecanicos),
+              MechanicListSheet(
+                mecanicos: mecanicos,
+                formatDistance: _formatDistance,
+                onClose: () {
+                  setState(() {
+                    _selectedMechanic = null;
+                    _polylines.clear();
+                    _markers.clear();
+                    context.read<LocationProvider>().mechanics.clear();
+                  });
 
-            if (selected != null) _buildSelectedMechanicCard(selected),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTopInfo() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        GestureDetector(
-          onTap: () {
-            Navigator.pop(context);
-            setState(() {
-              _selectedMechanic = null;
-              _markers.clear();
-              _polylines.clear();
-            });
-          },
-          child: Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: const Icon(Icons.close, color: Colors.black87),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 6,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _currentAddress ?? "Obteniendo dirección...",
-                  style: const TextStyle(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _selectedMechanic?['name'] ?? "Sin mecánico seleccionado",
-                  style: const TextStyle(fontSize: 13, color: Colors.black54),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBuscarButton() {
-    return Positioned(
-      bottom: 40,
-      left: 20,
-      right: 20,
-      child: ElevatedButton(
-        onPressed: _buscarMecanicosCercanos,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF235EE8),
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        child: const Text(
-          'Buscar mecánicos cercanos',
-          style: TextStyle(color: Colors.white, fontSize: 16),
-        ),
-      ),
-    );
-  }
-
-  // ✅ RESTAURADO: botón “X” en lista de mecánicos
-  Widget _buildMechanicList(List<LocationEntity> mecanicos) {
-    return Positioned(
-      bottom: 0,
-      left: 0,
-      right: 0,
-      child: Container(
-        height: 298,
-        padding: const EdgeInsets.only(top: 4, left: 10, right: 10, bottom: 10),
-        decoration: const BoxDecoration(
-          color: Colors.white70,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
-          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 6)],
-        ),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 6),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      const Text(
-                        "Mecánicos localizados:",
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
+                  if (_currentPosition != null && _mapController != null) {
+                    _mapController!.animateCamera(
+                      CameraUpdate.newCameraPosition(
+                        CameraPosition(target: _currentPosition!, zoom: 15),
                       ),
-                      const SizedBox(width: 6),
-                      Text(
-                        "${mecanicos.length}",
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  ElevatedButton(
-                    onPressed: () async {
-                      setState(() {
-                        _selectedMechanic = null;
-                        _polylines.clear();
-                        _markers.clear();
-                        _buscando = false;
-                        context.read<LocationProvider>().mechanics.clear();
-                      });
-
-                      if (_currentPosition != null && _mapController != null) {
-                        await _mapController!.animateCamera(
-                          CameraUpdate.newCameraPosition(
-                            CameraPosition(target: _currentPosition!, zoom: 15),
-                          ),
-                        );
-                      }
+                    );
+                  }
+                },
+                onRoute: _mostrarRuta,
+                onRequest: (m) {
+                  context.push(
+                    AppRoutes.expressMechanic,
+                    extra: {
+                      'mechanicUuid': m.uuid,
+                      'mechanicName': m.name,
+                      'mechanicLat': m.lat,
+                      'mechanicLng': m.lng,
+                      'userLat': _currentPosition!.latitude,
+                      'userLng': _currentPosition!.longitude,
+                      'userAddress': _currentAddress,
                     },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      shape: const CircleBorder(
-                        side: BorderSide(color: Colors.grey, width: 1.2),
-                      ),
-                      padding: const EdgeInsets.all(8),
-                      elevation: 2,
-                    ),
-                    child: const Icon(
-                      Icons.close_sharp,
-                      size: 20,
-                      color: Colors.redAccent,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: ListView.builder(
-                itemCount: mecanicos.length,
-                itemBuilder: (context, i) {
-                  final m = mecanicos[i];
-                  return MechanicCard(
-                    mechanic: {
-                      'uuid': m.uuid,
-                      'lat': m.lat,
-                      'lng': m.lng,
-                      'name': m.name,
-                      'distance': m.distance,
-                    },
-                    distanceText: _formatDistance(m.distance!),
-                    onRoutePressed: () => _mostrarRuta(m),
                   );
                 },
               ),
-            ),
+
+            if (selected != null)
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: SelectedMechanicCard(
+                  mechanic: selected,
+                  onBack: _buscarMecanicosCercanos,
+                  onCancel: () {
+                    setState(() {
+                      _selectedMechanic = null;
+                      _polylines.clear();
+                    });
+                  },
+                ),
+              ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildSelectedMechanicCard(Map<String, dynamic> selected) {
-    return Positioned(
-      bottom: 0,
-      left: 0,
-      right: 0,
-      child: SelectedMechanicCard(
-        mechanic: selected,
-        onBack: _buscarMecanicosCercanos,
-        onCancel: () {
-          setState(() {
-            _selectedMechanic = null;
-            _polylines.clear();
-          });
-        },
       ),
     );
   }

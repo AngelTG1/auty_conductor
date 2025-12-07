@@ -9,26 +9,33 @@ class AuthModel extends AuthEntity {
     required super.email,
     required super.phone,
     required super.token,
+    required super.profileImage,
   });
 
   factory AuthModel.fromJson(Map<String, dynamic> json) {
-    // 🔹 Detección flexible: busca datos tanto planos como anidados
-    final user = json['user'] ?? {};
-    final driver = json['driver'] ?? {};
+    String extract(dynamic v) {
+      if (v == null) return "";
+      if (v is String) return v;
+      if (v is Map && v.containsKey('value')) return v["value"].toString();
+      return v.toString();
+    }
 
     return AuthModel(
-      uuid: json['uuid'] ?? user['uuid'] ?? '',
-      driverUuid:
-          json['driverUuid'] ?? json['driver_uuid'] ?? driver['uuid'] ?? '',
-      licenseNumber:
-          json['licenseNumber'] ??
-          json['license_number'] ??
-          driver['licenseNumber'] ??
-          '',
-      name: json['name'] ?? user['name'] ?? '',
-      email: json['email'] ?? user['email'] ?? '',
-      phone: json['phone'] ?? user['phone'] ?? '',
-      token: json['token'] ?? '',
+      uuid: extract(json['uuid']),
+      driverUuid: extract(json['driverUuid']),
+      licenseNumber: extract(json['licenseNumber']),
+      name: extract(json['name']),
+      email: extract(json['email']),
+      phone: extract(json['phone']),
+      token: extract(json['token']),
+
+      // 🔥 Corrección: toma imageUrl o user.profileImage
+      profileImage: extract(
+        json['imageUrl'] ??
+            json['profileImage'] ??
+            json['user']?['profileImage'] ??
+            "",
+      ),
     );
   }
 }
