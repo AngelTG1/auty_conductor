@@ -50,17 +50,13 @@ class _ExpressMechanicPageState extends State<ExpressMechanicPage> {
     _descCtrl.addListener(_onTextChange);
     _locationCtrl.addListener(_onTextChange);
 
-    // =====================================================
     // 🔥 ESCUCHAR RESPUESTA DEL MECÁNICO POR WEBSOCKET
-    // =====================================================
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final ws = context.read<WsService>();
 
       ws.addListener(() {
-        final msg = ws.lastMessage; // ✅ CORREGIDO
-
-        if (msg == null) return;
-        if (!mounted) return;
+        final msg = ws.lastMessage;
+        if (msg == null || !mounted) return;
 
         // Cerrar modal si está abierto
         if (Navigator.canPop(context)) {
@@ -88,10 +84,12 @@ class _ExpressMechanicPageState extends State<ExpressMechanicPage> {
     super.dispose();
   }
 
+  // ======================================================
+  // 🔧 Cargar datos iniciales
+  // ======================================================
+
   Future<void> _loadInitialData() async {
     await Future.wait([_loadVehicle(), _loadLocation()]);
-
-    if (!mounted) return; // 🔥 evita crash
   }
 
   void _onTextChange() {
@@ -109,7 +107,7 @@ class _ExpressMechanicPageState extends State<ExpressMechanicPage> {
 
     final result = await context.read<VehicleProvider>().loadMyVehicle(uuid);
 
-    if (!mounted) return; // 👈 evita el crash
+    if (!mounted) return;
 
     myVehicle = result;
 
@@ -127,10 +125,10 @@ class _ExpressMechanicPageState extends State<ExpressMechanicPage> {
       _locationCtrl.text = address;
 
       locationOk.value = true;
-
-      Future.delayed(const Duration(seconds: 2), () {
-        locationOk.value = false;
-      });
+      Future.delayed(
+        const Duration(seconds: 2),
+        () => locationOk.value = false,
+      );
     } catch (_) {
       _locationCtrl.text = "No se pudo obtener la ubicación";
     }
@@ -146,8 +144,9 @@ class _ExpressMechanicPageState extends State<ExpressMechanicPage> {
   }
 
   // ======================================================
-  // 🔥 ENVIAR SOLICITUD + ABRIR MODAL "ESPERANDO..."
+  // 🚀 ENVIAR SOLICITUD AL MECÁNICO
   // ======================================================
+
   Future<void> _sendRequest() async {
     isSaving.value = true;
 
@@ -167,9 +166,8 @@ class _ExpressMechanicPageState extends State<ExpressMechanicPage> {
     isSaving.value = false;
 
     if (!mounted) return;
-    final dialogKey = GlobalKey<WaitingMechanicDialogState>();
 
-    // Abrir modal de espera
+    // Abrir modal esperando respuesta
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -179,14 +177,11 @@ class _ExpressMechanicPageState extends State<ExpressMechanicPage> {
             context.go(AppRoutes.home);
           },
           onAutoRejected: () {
-            // 🔥 Mostrar mensaje automático
             showDialog(
               context: context,
               builder: (_) => AlertDialog(
                 title: const Text("Solicitud Expirada"),
-                content: const Text(
-                  "El mecánico no respondió a tiempo y la solicitud fue rechazada automáticamente.",
-                ),
+                content: const Text("El mecánico no respondió a tiempo."),
                 actions: [
                   TextButton(
                     onPressed: () {
@@ -205,33 +200,26 @@ class _ExpressMechanicPageState extends State<ExpressMechanicPage> {
   }
 
   // ======================================================
-  // 🟢 MECÁNICO ACEPTÓ LA SOLICITUD
+  // 🟢 MECÁNICO ACEPTÓ — ABRIR MAPA AUTOMÁTICO
   // ======================================================
+
   void _onAccepted(Map<String, dynamic> request) {
     if (!mounted) return;
 
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Solicitud Aceptada"),
-        content: const Text("El mecánico aceptó tu solicitud."),
-        actions: [
-          TextButton(
-            onPressed: () {
-              if (!mounted) return;
-              Navigator.of(context, rootNavigator: true).pop(); // cerrar alerta
-              context.go(AppRoutes.home); // navegar
-            },
-            child: const Text("OK"),
-          ),
-        ],
-      ),
+    // 🔥 Cerrar modal
+    Navigator.of(context, rootNavigator: true).popUntil((r) => r.isFirst);
+
+    // 🔥 Ir al mapa de tracking (ruta REAL)
+    context.push(
+      AppRoutes.driverTrackingMechanic, // '/tracking/mechanic'
+      extra: request,
     );
   }
 
   // ======================================================
-  // ❌ MECÁNICO RECHAZÓ LA SOLICITUD
+  // ❌ MECÁNICO RECHAZÓ
   // ======================================================
+
   void _onRejected(Map<String, dynamic> request) {
     if (!mounted) return;
 
@@ -243,8 +231,7 @@ class _ExpressMechanicPageState extends State<ExpressMechanicPage> {
         actions: [
           TextButton(
             onPressed: () {
-              if (!mounted) return;
-              Navigator.of(context, rootNavigator: true).pop();
+              Navigator.pop(context);
               context.go(AppRoutes.home);
             },
             child: const Text("OK"),
@@ -257,6 +244,7 @@ class _ExpressMechanicPageState extends State<ExpressMechanicPage> {
   // ======================================================
   // UI
   // ======================================================
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -267,79 +255,91 @@ class _ExpressMechanicPageState extends State<ExpressMechanicPage> {
   }
 
   Widget _buildUI(BuildContext context) {
-    return Stack(
-      children: [
-        CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  const SizedBox(height: 40),
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: () {
+        FocusScope.of(context).unfocus(); // ✅ CIERRA EL TECLADO
+      },
+      child: Stack(
+        children: [
+          CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    const SizedBox(height: 40),
 
-                  const Text(
-                    "Configuración del problema",
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  DescriptionField(
-                    controller: _descCtrl,
-                    onValidate: _onTextChange,
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  LocationField(
-                    controller: _locationCtrl,
-                    onRefresh: _loadLocation,
-                  ),
-
-                  ValueListenableBuilder<bool>(
-                    valueListenable: locationOk,
-                    builder: (_, ok, __) => AnimatedOpacity(
-                      opacity: ok ? 1 : 0,
-                      duration: const Duration(milliseconds: 300),
-                      child: ok
-                          ? _locationSuccessIndicator()
-                          : const SizedBox.shrink(),
+                    const Text(
+                      "Configuración del problema",
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                  ),
 
-                  const SizedBox(height: 20),
+                    const SizedBox(height: 12),
 
-                  ValueListenableBuilder<Widget?>(
-                    valueListenable: vehicleCardMemo,
-                    builder: (_, w, __) =>
-                        w ?? const Center(child: CircularProgressIndicator()),
-                  ),
+                    DescriptionField(
+                      controller: _descCtrl,
+                      onValidate: _onTextChange,
+                    ),
 
-                  const SizedBox(height: 150),
-                ]),
+                    const SizedBox(height: 12),
+
+                    LocationField(
+                      controller: _locationCtrl,
+                      onRefresh: _loadLocation,
+                    ),
+
+                    ValueListenableBuilder<bool>(
+                      valueListenable: locationOk,
+                      builder: (_, ok, __) => AnimatedOpacity(
+                        opacity: ok ? 1 : 0,
+                        duration: const Duration(milliseconds: 300),
+                        child: ok
+                            ? _locationSuccessIndicator()
+                            : const SizedBox.shrink(),
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    ValueListenableBuilder<Widget?>(
+                      valueListenable: vehicleCardMemo,
+                      builder: (_, w, __) =>
+                          w ?? const Center(child: CircularProgressIndicator()),
+                    ),
+
+                    const SizedBox(height: 150),
+                  ]),
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
 
-        // Botón BACK
-        Positioned(
-          top: 10,
-          left: 10,
-          child: GestureDetector(
-            onTap: () => context.pop(),
-            child: Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.05),
-                shape: BoxShape.circle,
+          // Botón BACK
+          Positioned(
+            top: 10,
+            left: 10,
+            child: GestureDetector(
+              onTap: () => context.pop(),
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.05),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.arrow_back, size: 22),
               ),
-              child: const Icon(Icons.arrow_back, size: 22),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -377,7 +377,7 @@ class _ExpressMechanicPageState extends State<ExpressMechanicPage> {
             Expanded(
               child: Text(
                 "Registra tu vehículo\nNecesitamos tu auto para solicitar un mecánico.",
-                style: TextStyle(fontSize: 15, color: Colors.black87),
+                style: TextStyle(fontSize: 15),
               ),
             ),
           ],
@@ -387,15 +387,25 @@ class _ExpressMechanicPageState extends State<ExpressMechanicPage> {
   }
 
   Widget _bottomButton() {
-    return SafeArea(
-      minimum: const EdgeInsets.only(left: 20, right: 20, bottom: 60, top: 10),
-      child: ValueListenableBuilder<bool>(
-        valueListenable: isFormValid,
-        builder: (_, valid, __) {
-          return ValueListenableBuilder<bool>(
-            valueListenable: isSaving,
-            builder: (_, saving, __) {
-              return ElevatedButton(
+    return ValueListenableBuilder<bool>(
+      valueListenable: isFormValid,
+      builder: (_, valid, __) {
+        return ValueListenableBuilder<bool>(
+          valueListenable: isSaving,
+          builder: (_, saving, __) {
+            return AnimatedPadding(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOut,
+              padding: EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 10,
+                // ✅ ESTO HACE QUE SUBA CON EL TECLADO
+                bottom: MediaQuery.of(context).viewInsets.bottom > 0
+                    ? MediaQuery.of(context).viewInsets.bottom + 16
+                    : 60,
+              ),
+              child: ElevatedButton(
                 onPressed: valid && !saving ? _sendRequest : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: valid
@@ -408,7 +418,14 @@ class _ExpressMechanicPageState extends State<ExpressMechanicPage> {
                   ),
                 ),
                 child: saving
-                    ? const CircularProgressIndicator(color: Colors.white)
+                    ? const SizedBox(
+                        height: 22,
+                        width: 22,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2.5,
+                        ),
+                      )
                     : const Text(
                         "Enviar solicitud",
                         style: TextStyle(
@@ -416,11 +433,11 @@ class _ExpressMechanicPageState extends State<ExpressMechanicPage> {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-              );
-            },
-          );
-        },
-      ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

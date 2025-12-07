@@ -1,4 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
+
 import 'package:auty_conductor/core/services/secure_storage_service.dart';
 
 class DataPerfilPage extends StatefulWidget {
@@ -13,7 +17,10 @@ class _DataPerfilPageState extends State<DataPerfilPage> {
   String? userEmail;
   String? userPhone;
   String? userLicense;
+  String? profileImage;
   bool loading = true;
+
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
@@ -22,33 +29,82 @@ class _DataPerfilPageState extends State<DataPerfilPage> {
   }
 
   Future<void> _loadUserData() async {
-    await Future.delayed(const Duration(milliseconds: 400));
+    await Future.delayed(const Duration(milliseconds: 300));
+
     final name = await SecureStorageService.read('userName');
     final email = await SecureStorageService.read('userEmail');
     final phone = await SecureStorageService.read('userPhone');
     final license = await SecureStorageService.read('licenseNumber');
+    final img = await SecureStorageService.read('profileImage');
 
     if (!mounted) return;
+
     setState(() {
       userName = name ?? 'No disponible';
       userEmail = email ?? 'No disponible';
       userPhone = (phone == null || phone.isEmpty) ? 'Sin verificar' : phone;
       userLicense = license ?? 'No disponible';
+      profileImage = img;
       loading = false;
     });
+  }
+
+  // 🔵 Elegir imagen
+  Future<void> _pickImage() async {
+    final XFile? picked = await _picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+    );
+
+    if (picked != null) {
+      await _uploadImage(File(picked.path));
+    }
+  }
+
+  // 🚀 Subir imagen
+  Future<void> _uploadImage(File file) async {
+    final uuid = await SecureStorageService.read('userUuid');
+    if (uuid == null) return;
+
+    final url = Uri.parse("https://fortunate-balance-production-8ac4.up.railway.app/users/$uuid/upload-image");
+    final request = http.MultipartRequest('POST', url);
+
+    request.files.add(await http.MultipartFile.fromPath('image', file.path));
+
+    final response = await request.send();
+
+    if (response.statusCode == 200) {
+      final respStr = await response.stream.bytesToString();
+
+      // extrae URL
+      final newUrl = RegExp(
+        r'"imageUrl":"(.*?)"',
+      ).firstMatch(respStr)?.group(1)?.replaceAll(r'\"', '');
+
+      if (newUrl != null) {
+        await SecureStorageService.write("profileImage", newUrl);
+
+        setState(() {
+          profileImage = newUrl;
+        });
+
+        // 🔥 REGRESAR y refrescar pantallas anteriores
+        Navigator.pop(context, true);
+        return;
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
 
-    // 🔹 fuentes responsivas
-    final double titleFont = width * 0.045; // 17–20
-    final double tileLabelFont = width * 0.032; // 12–14
-    final double tileValueFont = width * 0.038; // 14–16
-    final double iconSize = width * 0.065; // 22–28
-    final double tilePadding = width * 0.04; // 14–18
-    final double spacing = width * 0.04;
+    final double titleFont = width * 0.045;
+    final double tileLabelFont = width * 0.032;
+    final double tileValueFont = width * 0.038;
+    final double iconSize = width * 0.065;
+    final double tilePadding = width * 0.04;
+    final double spacing = width * 0.06;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9F9),
@@ -67,11 +123,52 @@ class _DataPerfilPageState extends State<DataPerfilPage> {
       ),
       body: loading
           ? const Center(child: CircularProgressIndicator())
-          : Padding(
+          : SingleChildScrollView(
               padding: EdgeInsets.all(width * 0.05),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
+                  // FOTO DE PERFIL
+                  Center(
+                    child: Column(
+                      children: [
+                        CircleAvatar(
+                          radius: width * 0.18,
+                          backgroundColor: Colors.grey[300],
+                          backgroundImage:
+                              (profileImage != null && profileImage!.isNotEmpty)
+                              ? NetworkImage(profileImage!)
+                              : null,
+                          child: (profileImage == null || profileImage!.isEmpty)
+                              ? Icon(
+                                  Icons.person,
+                                  size: width * 0.15,
+                                  color: Colors.white,
+                                )
+                              : null,
+                        ),
+                        SizedBox(height: spacing * 0.6),
+
+                        // 🔵 Botón editar foto
+                        GestureDetector(
+                          onTap: _pickImage,
+                          child: Text(
+                            "Editar foto",
+                            style: TextStyle(
+                              color: Colors.blue,
+                              fontSize: tileLabelFont,
+                              fontWeight: FontWeight.w600,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  SizedBox(height: spacing * 1.2),
+
+                  // TILES
                   _buildInfoTile(
                     icon: Icons.person_outline,
                     label: "Nombre completo",
@@ -147,7 +244,6 @@ class _DataPerfilPageState extends State<DataPerfilPage> {
         children: [
           Icon(icon, color: const Color(0xFF235EE8), size: iconSize),
           SizedBox(width: padding),
-
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -161,7 +257,6 @@ class _DataPerfilPageState extends State<DataPerfilPage> {
                   ),
                 ),
                 const SizedBox(height: 4),
-
                 Text(
                   value ?? 'No disponible',
                   style: TextStyle(

@@ -9,13 +9,10 @@ class AuthModel extends AuthEntity {
     required super.email,
     required super.phone,
     required super.token,
+    required super.profileImage,
   });
 
   factory AuthModel.fromJson(Map<String, dynamic> json) {
-    // Función para extraer strings desde:
-    // - "texto"
-    // - { "value": "texto" }
-    // - cualquier otro tipo
     String extract(dynamic v) {
       if (v == null) return "";
       if (v is String) return v;
@@ -23,23 +20,22 @@ class AuthModel extends AuthEntity {
       return v.toString();
     }
 
-    final user = json['user'] ?? {};
-    final driver = json['driver'] ?? {};
-
     return AuthModel(
-      uuid: extract(json['uuid'] ?? user['uuid']),
-      driverUuid: extract(
-        json['driverUuid'] ?? json['driver_uuid'] ?? driver['uuid'],
-      ),
-      licenseNumber: extract(
-        json['licenseNumber'] ??
-            json['license_number'] ??
-            driver['licenseNumber'],
-      ),
-      name: extract(json['name'] ?? user['name']),
-      email: extract(json['email'] ?? user['email']),
-      phone: extract(json['phone'] ?? user['phone']),
+      uuid: extract(json['uuid']),
+      driverUuid: extract(json['driverUuid']),
+      licenseNumber: extract(json['licenseNumber']),
+      name: extract(json['name']),
+      email: extract(json['email']),
+      phone: extract(json['phone']),
       token: extract(json['token']),
+
+      // 🔥 Corrección: toma imageUrl o user.profileImage
+      profileImage: extract(
+        json['imageUrl'] ??
+            json['profileImage'] ??
+            json['user']?['profileImage'] ??
+            "",
+      ),
     );
   }
 }

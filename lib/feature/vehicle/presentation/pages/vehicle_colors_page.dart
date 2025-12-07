@@ -13,10 +13,6 @@ class VehicleColorsPage extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F8F8),
-      appBar: AppBar(
-        title: const Text('Configura tu vehículo'),
-        foregroundColor: Colors.black,
-      ),
       body: SafeArea(
         child: prov.loading
             ? const Center(child: CircularProgressIndicator())

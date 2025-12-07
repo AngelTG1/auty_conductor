@@ -8,6 +8,7 @@ class RequestEntity {
   final double lng;
   final dynamic vehicle;
   final String status;
+  final String? chatUuid; // 👈 NUEVO
 
   RequestEntity({
     required this.uuid,
@@ -19,5 +20,6 @@ class RequestEntity {
     required this.lng,
     required this.vehicle,
     required this.status,
+    this.chatUuid, // 👈 NUEVO
   });
 }

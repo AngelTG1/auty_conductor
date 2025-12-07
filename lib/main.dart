@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:auty_conductor/feature/request/presentation/provider/request_provider.dart';
 import 'package:auty_conductor/core/ws/ws_service.dart';
 
@@ -6,7 +7,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 
-import 'package:flutter_screenutil/flutter_screenutil.dart'; // 👈 AÑADIDO
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'firebase_options.dart';
 import 'core/router/app_router.dart';
@@ -19,9 +20,20 @@ import 'feature/location/presentation/provider/tracking_provider.dart';
 import 'core/services/analytics_service.dart';
 import 'core/services/secure_storage_service.dart';
 
+// ⭐ Nuevos ⭐
+import 'feature/chat/presentation/providers/chat_provider.dart';
+import 'feature/chat/data/datasources/chat_remote_datasource.dart';
+import 'feature/chat/data/repositories/chat_repository_impl.dart';
+import 'feature/chat/domain/usecases/send_message_usecase.dart';
+import 'feature/chat/domain/usecases/get_messages_usecase.dart';
+
+import 'core/services/permission_service.dart';
+import 'feature/comments/presentation/providers/comment_provider.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  await PermissionService.requestLocationPermission();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await AnalyticsService.logAppOpened();
 
@@ -41,11 +53,30 @@ class MainApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => TrackingProvider()),
         ChangeNotifierProvider(create: (_) => RequestProvider()),
         ChangeNotifierProvider(create: (_) => WsService()),
+        ChangeNotifierProvider(create: (_) => CommentProvider()),
+
+        // ⭐ CHAT PROVIDER COMPLETO ⭐
+        ChangeNotifierProvider(
+          create: (context) {
+            final ws = Provider.of<WsService>(context, listen: false);
+
+            final dataSource = ChatRemoteDataSource();
+            final repo = ChatRepositoryImpl(dataSource);
+
+            return ChatProvider(
+              sendUseCase: SendMessageUseCase(repo),
+              getUseCase: GetMessagesUseCase(repo),
+              ws: ws,
+            );
+          },
+        ),
       ],
       child: Builder(
         builder: (context) {
+          // AUTO RECONEXION WS
           WidgetsBinding.instance.addPostFrameCallback((_) async {
             final ws = Provider.of<WsService>(context, listen: false);
+
             final driverUuid = await SecureStorageService.read("driverUuid");
             final token = await SecureStorageService.read("token");
 
@@ -58,7 +89,7 @@ class MainApp extends StatelessWidget {
           });
 
           return ScreenUtilInit(
-            designSize: const Size(390, 844), // 📱 Tamaño base (iPhone 12)
+            designSize: const Size(390, 844),
             minTextAdapt: true,
             splitScreenMode: true,
             builder: (_, child) {
