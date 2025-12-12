@@ -18,6 +18,5 @@ class AppRoutes {
   static const driverTrackingMechanic = '/tracking/mechanic';
   static const tracking = "/tracking";
 
-  // 💬 NUEVO
   static const chat = "/chat";
 }

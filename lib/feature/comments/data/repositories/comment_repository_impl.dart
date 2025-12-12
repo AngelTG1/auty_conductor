@@ -1,7 +1,7 @@
 import '../../domain/entities/comment_entity.dart';
 import '../../domain/repositories/comment_repository.dart';
 import '../datasources/comment_remote_datasource.dart';
-import '../models/comment_model.dart';
+
 
 class CommentRepositoryImpl implements CommentRepository {
   final CommentRemoteDataSource remote;

@@ -166,7 +166,7 @@ class _LoginPageState extends State<LoginPage> {
   Widget _terms(Size size) {
     final double termsFontSize = size.width * 0.030;
 
-    // 🔹 Tamaño del checkbox ajustado pero NO gigante
+    // Tamaño del checkbox ajustado pero NO gigante
     final double checkboxSize = size.width * 0.055; // ~18–22px
     final double iconSize = checkboxSize * 0.6;
 
@@ -187,7 +187,7 @@ class _LoginPageState extends State<LoginPage> {
               side: const BorderSide(color: Color(0xFFBDBDBD), width: 2),
               activeColor: const Color(0xFF1E329D),
 
-              // 🔹 Hace que no se vea tan grande sin romper accesibilidad
+              // Hace que no se vea tan grande sin romper accesibilidad
               visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
             ),
           ),

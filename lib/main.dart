@@ -3,7 +3,6 @@ import 'package:auty_conductor/feature/request/presentation/provider/request_pro
 import 'package:auty_conductor/core/ws/ws_service.dart';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 
@@ -19,6 +18,8 @@ import 'feature/location/presentation/provider/tracking_provider.dart';
 
 import 'core/services/analytics_service.dart';
 import 'core/services/secure_storage_service.dart';
+import 'core/theme/app_theme.dart';
+import 'core/theme/theme_provider.dart';
 
 // ⭐ Nuevos ⭐
 import 'feature/chat/presentation/providers/chat_provider.dart';
@@ -47,6 +48,7 @@ class MainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => VehicleProvider()),
         ChangeNotifierProvider(create: (_) => LocationProvider()),
@@ -55,7 +57,6 @@ class MainApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => WsService()),
         ChangeNotifierProvider(create: (_) => CommentProvider()),
 
-        // ⭐ CHAT PROVIDER COMPLETO ⭐
         ChangeNotifierProvider(
           create: (context) {
             final ws = Provider.of<WsService>(context, listen: false);
@@ -93,19 +94,13 @@ class MainApp extends StatelessWidget {
             minTextAdapt: true,
             splitScreenMode: true,
             builder: (_, child) {
+              final themeMode = context.watch<ThemeProvider>().themeMode;
               return MaterialApp.router(
                 debugShowCheckedModeBanner: false,
                 routerConfig: appRouter,
-                theme: ThemeData(
-                  useMaterial3: true,
-                  scaffoldBackgroundColor: Colors.grey[100],
-                  colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-                  appBarTheme: const AppBarTheme(
-                    backgroundColor: Color(0xFF1E329D),
-                    foregroundColor: Colors.white,
-                    centerTitle: true,
-                  ),
-                ),
+                theme: AppTheme.light,
+                darkTheme: AppTheme.dark,
+                themeMode: themeMode,
               );
             },
           );

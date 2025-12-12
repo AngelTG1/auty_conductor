@@ -110,33 +110,74 @@ class _HomePageState extends State<HomePage> {
                     horizontal: 16,
                     vertical: 2,
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      HomeHeader(
-                        userName: userName ?? '',
-                        userEmail: userEmail ?? '',
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final isWide = constraints.maxWidth >= 800;
 
-                        onLogout: _confirmLogout,
-                        onNotifications: () {},
-                      ),
+                      final vehicleSection = myVehicle != null
+                          ? CarCard(
+                              vehicle: myVehicle!,
+                              licenseNumber: userLicense,
+                            )
+                          : _noVehicleCard();
 
-                      const SizedBox(height: 20),
+                      final primaryActions = Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: const [
+                          SizedBox(height: 10),
+                          SearchMechanicButton(),
+                        ],
+                      );
 
-                      if (myVehicle != null)
-                        CarCard(vehicle: myVehicle!, licenseNumber: userLicense)
-                      else
-                        _noVehicleCard(),
+                      final historySection = Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: const [
+                          SizedBox(height: 10),
+                          HistoryEmpty(),
+                        ],
+                      );
 
-                      const SizedBox(height: 10),
-                      
-
-                      const SizedBox(height: 10),
-                      const SearchMechanicButton(),
-
-                      const HistoryEmpty(),
-                      const SizedBox(height: 20),
-                    ],
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          HomeHeader(
+                            userName: userName ?? '',
+                            userEmail: userEmail ?? '',
+                            onLogout: _confirmLogout,
+                            onNotifications: () {},
+                          ),
+                          const SizedBox(height: 20),
+                          if (isWide)
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  flex: 3,
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      vehicleSection,
+                                      primaryActions,
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  flex: 2,
+                                  child: historySection,
+                                ),
+                              ],
+                            )
+                          else ...[
+                            vehicleSection,
+                            primaryActions,
+                            historySection,
+                          ],
+                          const SizedBox(height: 20),
+                        ],
+                      );
+                    },
                   ),
                 ),
               ),

@@ -10,7 +10,7 @@ class AuthRemoteDataSource {
   final String baseUrl = ApiConstants.auth;
 
   // ===============================
-  // 🔹 LOGIN NORMAL (CON appType)
+  // LOGIN NORMAL (CON appType)
   // ===============================
   Future<AuthModel> login(String email, String password) async {
     final url = Uri.parse('$baseUrl/login');
@@ -20,7 +20,7 @@ class AuthRemoteDataSource {
       body: jsonEncode({
         'email': email,
         'password': password,
-        'appType': 'driver', // 👈 IMPORTANTE PARA ESTA APP
+        'appType': 'driver',
       }),
     );
 
@@ -67,7 +67,7 @@ class AuthRemoteDataSource {
   }
 
   // ===============================
-  // 🔥 LOGIN CON GOOGLE (SIMPLE)
+  // LOGIN CON GOOGLE (SIMPLE)
   // ===============================
   Future<AuthModel> loginWithGoogle() async {
     final GoogleSignInAccount? gUser = await GoogleSignIn().signIn();

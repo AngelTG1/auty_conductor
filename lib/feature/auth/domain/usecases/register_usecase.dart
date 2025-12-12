@@ -11,7 +11,7 @@ class RegisterUseCase {
     required String phone,
     required String email,
     required String password,
-    required bool isDriver, // ✅ nuevo parámetro
+    required bool isDriver,
   }) {
     return repository.register(name, phone, email, password, isDriver);
   }

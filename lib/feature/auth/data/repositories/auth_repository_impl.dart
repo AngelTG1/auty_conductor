@@ -12,7 +12,6 @@ class AuthRepositoryImpl implements AuthRepository {
     return remoteDataSource.login(email, password);
   }
 
-  // ✅ Ahora el método register también incluye isDriver
   @override
   Future<AuthEntity> register(
     String name,
@@ -24,7 +23,6 @@ class AuthRepositoryImpl implements AuthRepository {
     return remoteDataSource.register(name, phone, email, password, isDriver);
   }
 
-  // 🔹 Nuevo método Google
   Future<AuthEntity> loginWithGoogle() {
     return remoteDataSource.loginWithGoogle();
   }
