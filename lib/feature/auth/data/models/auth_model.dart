@@ -29,7 +29,6 @@ class AuthModel extends AuthEntity {
       phone: extract(json['phone']),
       token: extract(json['token']),
 
-      // 🔥 Corrección: toma imageUrl o user.profileImage
       profileImage: extract(
         json['imageUrl'] ??
             json['profileImage'] ??

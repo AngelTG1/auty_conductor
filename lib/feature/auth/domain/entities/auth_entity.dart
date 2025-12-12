@@ -6,7 +6,7 @@ class AuthEntity {
   final String email;
   final String phone;
   final String token;
-  final String profileImage; // 👈 NUEVO
+  final String profileImage;
 
   AuthEntity({
     required this.uuid,
@@ -16,6 +16,6 @@ class AuthEntity {
     required this.email,
     required this.phone,
     required this.token,
-    required this.profileImage, // 👈 NUEVO
+    required this.profileImage, 
   });
 }
